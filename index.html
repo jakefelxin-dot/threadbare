@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>THREADBARE &mdash; stories that fork</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,500&family=Newsreader:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root{
+    --void: #12141c;
+    --void-2: #1b1e29;
+    --parchment: #e9e1cd;
+    --parchment-dim: #a39d8c;
+    --gold: #c9a15c;
+    --teal: #4a8078;
+    --line: rgba(233,225,205,0.12);
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  html{ scroll-behavior:smooth; }
+
+  body{
+    background:var(--void);
+    color:var(--parchment);
+    font-family:'Newsreader', serif;
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.7rem; letter-spacing:0.25em; text-transform:uppercase;
+    color:var(--gold);
+  }
+
+  h1,h2,h3{ font-family:'Fraunces', serif; font-weight:500; }
+
+  nav{
+    position:fixed; top:0; left:0; right:0; z-index:200;
+    display:flex; justify-content:space-between; align-items:center;
+    padding:1.5rem 3rem; mix-blend-mode:difference;
+  }
+  nav .logo{ font-family:'Fraunces', serif; font-weight:700; font-size:1.1rem; letter-spacing:0.02em; }
+  nav .navlinks{ display:flex; gap:2rem; font-family:'JetBrains Mono', monospace; font-size:0.75rem; letter-spacing:0.1em; }
+  nav a{ color:var(--parchment); text-decoration:none; opacity:0.7; transition:opacity 0.2s; }
+  nav a:hover{ opacity:1; }
+
+  #hero{
+    height:100vh; position:relative; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+    padding:0 2rem;
+  }
+  #threadSvg{ position:absolute; inset:0; width:100%; height:100%; }
+  #threadSvg path{
+    fill:none; stroke:var(--gold); stroke-width:1.4;
+    stroke-dasharray:2400; stroke-dashoffset:2400;
+    animation:draw 3.2s cubic-bezier(0.65,0,0.35,1) forwards 0.3s;
+    opacity:0.55;
+  }
+  #threadSvg .branch{ stroke:var(--teal); stroke-dasharray:900; stroke-dashoffset:900; animation-delay:1.6s; animation-duration:1.8s; opacity:0.4;}
+  @keyframes draw{ to{ stroke-dashoffset:0; } }
+
+  #hero h1{
+    font-size:clamp(3rem, 9vw, 6.5rem); letter-spacing:-0.01em;
+    position:relative; z-index:2;
+  }
+  #hero h1 em{ font-style:italic; color:var(--gold); }
+  #hero p{
+    max-width:34em; color:var(--parchment-dim); font-size:1.15rem; margin-top:1.2rem;
+    font-style:italic; position:relative; z-index:2;
+  }
+  #scrollHint{
+    position:absolute; bottom:2.5rem; font-family:'JetBrains Mono',monospace;
+    font-size:0.7rem; letter-spacing:0.2em; color:var(--parchment-dim);
+    animation:bob 2s ease-in-out infinite;
+  }
+  @keyframes bob{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
+
+  #shelf{ padding:8rem 3rem 6rem; max-width:1200px; margin:0 auto; }
+  #shelf .head{ margin-bottom:3rem; }
+  #shelf h2{ font-size:2.2rem; margin-top:0.5rem; }
+
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
+    gap:2px; background:var(--line); border:1px solid var(--line);
+  }
+
+  .card{
+    background:var(--void); padding:2.4rem 2rem; cursor:pointer;
+    position:relative; overflow:hidden; transition:background 0.35s;
+    opacity:0; transform:translateY(24px);
+  }
+  .card.visible{ animation:rise 0.7s ease forwards; }
+  @keyframes rise{ to{ opacity:1; transform:translateY(0); } }
+
+  .card:hover{ background:var(--void-2); }
+  .card .kind{ font-family:'JetBrains Mono', monospace; font-size:0.65rem; letter-spacing:0.18em; text-transform:uppercase; }
+  .card.fiction .kind{ color:var(--parchment-dim); }
+  .card.interactive .kind{ color:var(--teal); }
+  .card h3{ font-size:1.5rem; margin:0.7rem 0 0.6rem; }
+  .card p{ color:var(--parchment-dim); font-size:0.95rem; }
+  .card .meta{ margin-top:1.2rem; font-family:'JetBrains Mono', monospace; font-size:0.7rem; color:var(--gold); }
+  .card::after{
+    content:''; position:absolute; left:0; bottom:0; height:2px; width:0%;
+    background:var(--gold); transition:width 0.4s ease;
+  }
+  .card:hover::after{ width:100%; }
+
+  #reader{
+    position:fixed; inset:0; z-index:300; background:var(--void);
+    transform:translateY(100%); transition:transform 0.55s cubic-bezier(0.65,0,0.35,1);
+    overflow-y:auto;
+  }
+  #reader.open{ transform:translateY(0); }
+  #closeReader{
+    position:fixed; top:1.5rem; right:2rem; z-index:310;
+    font-family:'JetBrains Mono', monospace; font-size:0.75rem; letter-spacing:0.15em;
+    color:var(--parchment); background:none; border:1px solid var(--line);
+    padding:0.6em 1.2em; cursor:pointer;
+  }
+  #closeReader:hover{ border-color:var(--gold); color:var(--gold); }
+
+  .readerInner{ max-width:680px; margin:0 auto; padding:8rem 2rem 10rem; }
+  .readerInner .eyebrow{ margin-bottom:1rem; }
+  .readerInner h2{ font-size:2.6rem; margin-bottom:2rem; }
+  .readerInner .dropcap:first-letter{
+    font-family:'Fraunces', serif; font-size:4.2rem; float:left; line-height:0.8;
+    margin:0.1em 0.08em 0 0; color:var(--gold);
+  }
+  .readerInner p{ margin-bottom:1.4rem; font-size:1.15rem; color:var(--parchment); min-height:1.6em; }
+  .cursor-blink{ opacity:0.7; animation:blink 0.9s step-end infinite; color:var(--gold); }
+  @keyframes blink{ 50%{opacity:0} }
+
+  .page-fold{
+    position:relative; height:1px; margin:3.5rem 0; background:var(--line);
+    opacity:0; transform:scaleX(0); transform-origin:left; transition:opacity 0.4s, transform 0.6s ease;
+  }
+  .page-fold.shown{ opacity:1; transform:scaleX(1); }
+  .page-fold::after{
+    content:'\2767'; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    background:var(--void); padding:0 1rem; color:var(--gold); font-size:0.8rem;
+  }
+
+  .thread-map{ display:flex; gap:0.4rem; margin:2.5rem 0; align-items:center; }
+  .thread-map .node{ width:8px; height:8px; border-radius:50%; background:var(--line); }
+  .thread-map .node.lit{ background:var(--gold); box-shadow:0 0 8px var(--gold); }
+  .thread-map .seg{ flex:1; height:1px; background:var(--line); }
+  .thread-map .seg.lit{ background:var(--gold); }
+
+  .choices{ display:flex; flex-direction:column; gap:0.9rem; margin-top:2.5rem; }
+  .choice-btn{
+    text-align:left; background:none; border:1px solid var(--line); color:var(--parchment);
+    font-family:'Newsreader', serif; font-style:italic; font-size:1.05rem;
+    padding:1.1em 1.4em; cursor:pointer; transition:all 0.25s;
+  }
+  .choice-btn:hover{ border-color:var(--teal); background:rgba(74,128,120,0.08); }
+  .choice-btn .arrow{ font-family:'JetBrains Mono',monospace; color:var(--gold); margin-right:0.6em; font-style:normal; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">THREADBARE</div>
+  <div class="navlinks"><a href="#shelf">LIBRARY</a><a href="#">ABOUT</a></div>
+</nav>
+
+<section id="hero">
+  <svg id="threadSvg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+    <path d="M -50 600 C 200 500, 300 700, 500 550 S 800 400, 1000 500 S 1300 300, 1400 350" />
+    <path class="branch" d="M 500 550 C 600 620, 650 700, 550 780" />
+    <path class="branch" d="M 1000 500 C 1080 440, 1150 460, 1220 400" />
+  </svg>
+  <p class="eyebrow">A LIBRARY WITH FORKS IN THE ROAD</p>
+  <h1>Stories that <em>branch</em>.</h1>
+  <p>Some are meant to be read straight through. Others fork the moment you touch them &mdash; and remember which way you went.</p>
+  <div id="scrollHint">SCROLL ↓</div>
+</section>
+
+<section id="shelf">
+  <div class="head">
+    <p class="eyebrow">THE SHELF</p>
+    <h2>Four stories, two kinds of reading.</h2>
+  </div>
+  <div class="grid" id="grid"></div>
+</section>
+
+<div id="reader">
+  <button id="closeReader">CLOSE ✕</button>
+  <div class="readerInner" id="readerInner"></div>
+</div>
+
+<script>
+const stories = [
+  {
+    id:'lighthouse', kind:'fiction', label:'SERIALIZED FICTION', title:'The Lighthouse Keeper\u2019s Ledger',
+    blurb:'Six entries from a keeper who stopped writing about the weather and started writing about what he saw in it.',
+    meta:'Ch. 3 of 6',
+    paras:[
+      'The lamp turned without me that night, and I let it. I sat on the gallery floor and watched the beam sweep the water, over and over, indifferent to whether I lived behind it.',
+      'There was a boat out past the second buoy. No lights of its own \u2014 it only existed in the half-second the beam touched it, then vanished again into the dark, like something that could only be seen and never kept.',
+      'I told myself it was a trick of salt spray on the lens. I have told myself worse things and believed them longer.',
+      'By the fourth pass, the boat was closer. By the sixth, it was gone entirely, and I found I had been holding the ledger so tightly the pencil had torn clean through the page.'
+    ]
+  },
+  {
+    id:'orchard', kind:'fiction', label:'SERIALIZED FICTION', title:'What the Orchard Kept',
+    blurb:'A family returns to a house they sold nine years ago, and the trees remember exactly what was buried beneath them.',
+    meta:'Ch. 1 of 8',
+    paras:[
+      'The new owners had let the orchard go feral, which Mara decided was the only decent thing they\u2019d done with the place.',
+      'She found the third tree from the fence line easily \u2014 easier than she wanted to admit \u2014 and stood over the roots for a long time before she let herself kneel.',
+      'The ground here had always been soft. That was the whole problem, back then. That was why it had been so easy.'
+    ]
+  },
+  {
+    id:'archive', kind:'interactive', label:'INTERACTIVE', title:'The Archive Wants One Thing',
+    blurb:'You\u2019re alone in a records room after hours. Something in the stacks is cataloguing you back.',
+    meta:'3 paths \u00b7 ~4 min',
+    start:'a1',
+    nodes:{
+      a1:{ text:'The reading room lights are on a timer, and yours ran out four minutes ago. In the dark between the shelves, you can hear something turning pages \u2014 slowly, deliberately, like it\u2019s looking for a specific one.', choices:[
+        {label:'Call out into the stacks', go:'a2'},
+        {label:'Follow the sound quietly', go:'a3'}
+      ]},
+      a2:{ text:'Your voice comes back to you wrong \u2014 a half-second delayed, in a register that isn\u2019t quite yours. The page-turning stops. Then, from every shelf at once, it starts again, faster.', choices:[
+        {label:'Run for the exit', go:'end_run'},
+        {label:'Stand very still', go:'end_still'}
+      ]},
+      a3:{ text:'You find the sound at the genealogy shelf. A ledger lies open on the floor, pages turning in a draft that doesn\u2019t exist \u2014 and it has stopped on a page with your name at the top, half-filled in.', choices:[
+        {label:'Read what\u2019s written so far', go:'end_read'},
+        {label:'Close the ledger', go:'end_close'}
+      ]},
+      end_run:{ text:'You make it to the door. When you look back through the glass, every shelf is empty, and every book is stacked, instead, in a neat pile at the exact spot you were just standing.', end:true },
+      end_still:{ text:'The pages stop. In the silence after, you hear the unmistakable scratch of a pen \u2014 writing something down. You never find out what.', end:true },
+      end_read:{ text:'It\u2019s a record of tonight. Of you, right now, reading this sentence. The next line is still being written as you watch it appear.', end:true },
+      end_close:{ text:'The ledger shuts itself before your hand reaches it. On the cover, where a title should be, is a date that hasn\u2019t happened yet.', end:true }
+    }
+  },
+  {
+    id:'signal', kind:'interactive', label:'INTERACTIVE', title:'Last Transmission from Bell 7',
+    blurb:'A relay station operator picks up a signal that shouldn\u2019t exist, and has to decide how far to follow it.',
+    meta:'3 paths \u00b7 ~3 min',
+    start:'s1',
+    nodes:{
+      s1:{ text:'The signal comes in on a frequency that was decommissioned in 1961. It repeats a single phrase, over and over, in your own voice: "Don\u2019t answer this."', choices:[
+        {label:'Answer it anyway', go:'s2'},
+        {label:'Log it and shut down the relay', go:'s3'}
+      ]},
+      s2:{ text:'The moment you key the mic, the phrase changes. It starts describing the room you\u2019re sitting in \u2014 correctly, in real time \u2014 as if it can see you through the console.', choices:[
+        {label:'Ask it what it wants', go:'end_ask'},
+        {label:'Cut the transmission', go:'end_cut'}
+      ]},
+      s3:{ text:'You shut it down. In the log, under "signal source," the system has already filled in a location: this room, this desk, this exact second.', end:true },
+      end_ask:{ text:'The voice \u2014 your voice \u2014 goes quiet for a long moment. Then it says: "The same thing you did." You never learn what that meant, only that the relay logs your next shift as already completed.', end:true },
+      end_cut:{ text:'The line goes dead. Weeks later you\u2019ll find your own handwriting in the station log for tonight, describing this exact choice, filed months before you made it.', end:true }
+    }
+  },
+  {
+    id:'rooms', kind:'fiction', label:'SERIALIZED FICTION', title:'The Weight of Small Rooms',
+    blurb:'A building inspector notices that one apartment in the complex measures smaller on every visit, by exactly the width of a doorway.',
+    meta:'Ch. 2 of 5',
+    paras:[
+      'The tape measure said eleven feet four inches. Last month it had said eleven feet nine. I checked the tape against the wall twice, then against the door frame, which was, as far as I could tell, exactly where it had always been.',
+      'The tenant watched me from the kitchen without blinking. "It does that," she said, like she was apologizing for a pet. "It\u2019s getting ready for something."',
+      'I asked her what. She said she used to know, and that not knowing anymore was the part that worried her.',
+      'I wrote "settling, recommend monitoring" on the form, because there was no box for what I actually wanted to write, which was that the room had gotten smaller while I was standing inside it.'
+    ]
+  },
+  {
+    id:'correspondence', kind:'fiction', label:'SERIALIZED FICTION', title:'Correspondence with the Drowned',
+    blurb:'A woman keeps receiving letters from her sister, postmarked three days after the boating accident that killed her.',
+    meta:'Ch. 1 of 7',
+    paras:[
+      'The first letter I assumed was posted before she died and simply delayed, the way mail sometimes is. The second one mentioned the funeral.',
+      'She wrote about the weather down there, which she described as patient. She wrote that she\u2019d met our grandmother, who she\u2019d never met living, and that grandmother sent her love, and a warning I wasn\u2019t ready for yet.',
+      'I stopped opening the mailbox after dark. It didn\u2019t stop the letters from arriving.'
+    ]
+  },
+  {
+    id:'seance', kind:'interactive', label:'INTERACTIVE', title:'The House Always Wins',
+    blurb:'Four friends run a séance as a joke. The table answers a question none of you asked.',
+    meta:'3 paths \u00b7 ~4 min',
+    start:'h1',
+    nodes:{
+      h1:{ text:'The glass moves before anyone\u2019s fingers are steady on it. It spells out a name that isn\u2019t on your guest list, then asks, letter by letter, who invited it.', choices:[
+        {label:'Answer honestly \u2014 no one did', go:'h2'},
+        {label:'Knock the glass off the table', go:'h3'}
+      ]},
+      h2:{ text:'The glass is still for a long moment. Then it spells: "GOOD. THAT MAKES THIS EASIER." The candles gutter out in an order that spells something too, if you\u2019re fast enough to read it.', choices:[
+        {label:'Try to read what the candles spelled', go:'end_candles'},
+        {label:'Turn the lights on immediately', go:'end_lights'}
+      ]},
+      h3:{ text:'The glass shatters on the floor, but the pointer keeps moving across the bare table, dragging a thin bead of something dark behind it that isn\u2019t ink.', end:true },
+      end_candles:{ text:'You catch three letters before the last candle dies: Y, O, U. You spend the rest of the night wondering how that sentence was going to end, and whose name was going to finish it.', end:true },
+      end_lights:{ text:'The lights come on. Everyone is exactly where they were, except the friend who was holding the glass, who is now sitting one chair further from the table than before, and doesn\u2019t remember moving.', end:true }
+    }
+  },
+  {
+    id:'channel9', kind:'interactive', label:'INTERACTIVE', title:'Static on Channel 9',
+    blurb:'A night-shift TV repairman finds a set that only plays one channel \u2014 a broadcast of his own apartment, live.',
+    meta:'3 paths \u00b7 ~3 min',
+    start:'c1',
+    nodes:{
+      c1:{ text:'Every channel button leads to the same feed: a static-grained shot of your living room, from an angle no camera in your apartment could produce. On the tiny screen, your armchair rocks, once, though you\u2019re not near it.', choices:[
+        {label:'Call your apartment landline from the shop', go:'c2'},
+        {label:'Drive home immediately', go:'c3'}
+      ]},
+      c2:{ text:'It rings twice. On the screen, the phone on your side table lights up and rings in perfect sync \u2014 and then a hand that isn\u2019t yours picks it up.', choices:[
+        {label:'Say hello', go:'end_hello'},
+        {label:'Hang up and call the police instead', go:'end_police'}
+      ]},
+      c3:{ text:'You get home to find the apartment empty and undisturbed. It\u2019s only later, alone in the dark, that you remember the shop TV is still plugged in behind you, still playing its channel, and you never checked what it was showing before you left.', end:true },
+      end_hello:{ text:'Nothing answers. But on the little screen, your armchair turns slightly, as if something in it just registered being spoken to for the first time.', end:true },
+      end_police:{ text:'They find nothing out of place. But the responding officer mentions, almost as an aside, that your porch light was on when they arrived \u2014 and you\u2019re certain, absolutely certain, that you never once turned it on.', end:true }
+    }
+  }
+];
+
+const grid = document.getElementById('grid');
+stories.forEach(s=>{
+  const card = document.createElement('div');
+  card.className = 'card ' + s.kind;
+  card.innerHTML = `
+    <div class="kind">${s.label}</div>
+    <h3>${s.title}</h3>
+    <p>${s.blurb}</p>
+    <div class="meta">${s.meta}</div>
+  `;
+  card.onclick = ()=> openStory(s);
+  grid.appendChild(card);
+});
+
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('visible'); obs.unobserve(e.target); } });
+},{threshold:0.15});
+document.querySelectorAll('.card').forEach(c=>obs.observe(c));
+
+const reader = document.getElementById('reader');
+const readerInner = document.getElementById('readerInner');
+document.getElementById('closeReader').onclick = ()=> reader.classList.remove('open');
+
+function openStory(s){
+  reader.classList.add('open');
+  if(s.kind === 'fiction') renderFiction(s);
+  else renderInteractive(s, s.start, []);
+  reader.scrollTop = 0;
+}
+
+function typeInto(el, str, speed, cb){
+  let i = 0;
+  function step(){
+    if(i <= str.length){
+      el.innerHTML = str.slice(0,i) + '<span class="cursor-blink">|</span>';
+      i++;
+      setTimeout(step, speed);
+    } else {
+      el.innerHTML = str;
+      if(cb) cb();
+    }
+  }
+  step();
+}
+
+function renderFiction(s){
+  readerInner.innerHTML = `
+    <p class="eyebrow">${s.label} &middot; ${s.meta}</p>
+    <h2>${s.title}</h2>
+    <div id="paras"></div>
+  `;
+  const container = document.getElementById('paras');
+
+  function typeParagraph(index){
+    if(index >= s.paras.length) return;
+    if(index > 0){
+      const fold = document.createElement('div');
+      fold.className = 'page-fold';
+      container.appendChild(fold);
+      requestAnimationFrame(()=> fold.classList.add('shown'));
+    }
+    const el = document.createElement('p');
+    if(index === 0) el.className = 'dropcap';
+    container.appendChild(el);
+    typeInto(el, s.paras[index], 14, ()=> setTimeout(()=> typeParagraph(index+1), 400));
+  }
+  typeParagraph(0);
+}
+
+function renderInteractive(s, nodeId, path){
+  const node = s.nodes[nodeId];
+  const newPath = [...path, nodeId];
+
+  const mapHtml = newPath.map((n,i)=>{
+    return `<div class="node lit"></div>` + (i < newPath.length-1 ? `<div class="seg lit"></div>` : (node.end ? '' : `<div class="seg"></div><div class="node"></div>`));
+  }).join('');
+
+  readerInner.innerHTML = `
+    <p class="eyebrow">${s.label} &middot; ${s.title}</p>
+    <div class="thread-map">${mapHtml}</div>
+    <p class="dropcap"></p>
+    <div class="choices" id="choicesWrap"></div>
+  `;
+  const p = readerInner.querySelector('.dropcap');
+  const wrap = document.getElementById('choicesWrap');
+
+  typeInto(p, node.text, 15, ()=>{
+    if(node.end){
+      const again = document.createElement('button');
+      again.className = 'choice-btn';
+      again.innerHTML = `<span class="arrow">\u21bb</span>Read from the beginning`;
+      again.onclick = ()=> renderInteractive(s, s.start, []);
+      wrap.appendChild(again);
+    } else {
+      node.choices.forEach(c=>{
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.innerHTML = `<span class="arrow">\u2192</span>${c.label}`;
+        btn.onclick = ()=> renderInteractive(s, c.go, newPath);
+        wrap.appendChild(btn);
+      });
+    }
+  });
+}
+</script>
+
+</body>
+</html>
