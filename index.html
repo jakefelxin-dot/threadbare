@@ -2,425 +2,1177 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>THREADBARE &mdash; stories that fork</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drift Colony</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,500&family=Newsreader:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
-  :root{
-    --void: #12141c;
-    --void-2: #1b1e29;
-    --parchment: #e9e1cd;
-    --parchment-dim: #a39d8c;
-    --gold: #c9a15c;
-    --teal: #4a8078;
-    --line: rgba(233,225,205,0.12);
-  }
+:root{
+  --bg:#0a0f16;
+  --surface:#121a24;
+  --surface-2:#1a2530;
+  --line:#26333f;
+  --cyan:#4fd8e0;
+  --amber:#ffb454;
+  --violet:#b48cff;
+  --text:#e8eef2;
+  --muted:#6f8291;
+  --green:#7fe0a0;
+  --sbw:190px;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(79,216,224,0.06), transparent 40%),
+    radial-gradient(circle at 85% 80%, rgba(180,140,255,0.05), transparent 40%),
+    var(--bg);
+  color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  min-height:100vh;
+  position:relative;
+  transition:background .4s ease;
+}
 
-  *{ margin:0; padding:0; box-sizing:border-box; }
+/* theme overrides — swapping --cyan/--amber recolors most of the UI */
+body.theme-rusthollow{ --cyan:#ff8c42; --amber:#ffce54; }
+body.theme-glacier{ --cyan:#7fd8ff; --amber:#eafcff; }
+body.theme-embercore{ --cyan:#ff5c39; --amber:#ffb454; }
 
-  html{ scroll-behavior:smooth; }
+/* starfield texture */
+body::before{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:0.5;
+  background-image:
+    radial-gradient(1px 1px at 8% 12%, #fff, transparent),
+    radial-gradient(1px 1px at 22% 68%, #fff, transparent),
+    radial-gradient(1px 1px at 35% 30%, #fff, transparent),
+    radial-gradient(1px 1px at 48% 82%, #fff, transparent),
+    radial-gradient(1px 1px at 61% 18%, #fff, transparent),
+    radial-gradient(1px 1px at 74% 55%, #fff, transparent),
+    radial-gradient(1px 1px at 85% 8%, #fff, transparent),
+    radial-gradient(1px 1px at 92% 72%, #fff, transparent),
+    radial-gradient(1px 1px at 15% 90%, #fff, transparent),
+    radial-gradient(1px 1px at 55% 45%, #fff, transparent);
+  animation:starDrift 60s linear infinite;
+}
+@keyframes starDrift{ from{ background-position:0 0; } to{ background-position:-200px 200px; } }
+body.reduce-motion::before{ animation:none; }
 
-  body{
-    background:var(--void);
-    color:var(--parchment);
-    font-family:'Newsreader', serif;
-    line-height:1.6;
-    overflow-x:hidden;
-  }
+/* scanline texture */
+body::after{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:repeating-linear-gradient(to bottom, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px);
+  opacity:0.4;
+}
 
-  .eyebrow{
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.7rem; letter-spacing:0.25em; text-transform:uppercase;
-    color:var(--gold);
-  }
+/* travel flash */
+.travel-flash{
+  position:fixed; inset:0; background:var(--cyan); opacity:0; pointer-events:none;
+  z-index:40; transition:opacity 0.5s ease;
+}
+.travel-flash.show{ opacity:0.22; transition:opacity 0.08s ease; }
 
-  h1,h2,h3{ font-family:'Fraunces', serif; font-weight:500; }
+.shell{
+  max-width:1080px; margin:0 auto; min-height:100vh;
+  display:flex; position:relative; z-index:1;
+}
+@media (max-width:760px){ .shell{ flex-direction:column; } }
 
-  nav{
-    position:fixed; top:0; left:0; right:0; z-index:200;
-    display:flex; justify-content:space-between; align-items:center;
-    padding:1.5rem 3rem; mix-blend-mode:difference;
-  }
-  nav .logo{ font-family:'Fraunces', serif; font-weight:700; font-size:1.1rem; letter-spacing:0.02em; }
-  nav .navlinks{ display:flex; gap:2rem; font-family:'JetBrains Mono', monospace; font-size:0.75rem; letter-spacing:0.1em; }
-  nav a{ color:var(--parchment); text-decoration:none; opacity:0.7; transition:opacity 0.2s; }
-  nav a:hover{ opacity:1; }
+/* ---------- sidebar ---------- */
+.sidebar{
+  width:var(--sbw); flex-shrink:0;
+  border-right:1px solid var(--line);
+  padding:16px 12px;
+  display:flex; flex-direction:column; gap:4px;
+  transition:width .25s ease;
+  overflow:hidden;
+}
+.sidebar.collapsed{ width:56px; }
+@media (max-width:760px){
+  .sidebar{ width:100% !important; border-right:none; border-bottom:1px solid var(--line);
+    flex-direction:row; overflow-x:auto; padding:12px; }
+}
 
-  #hero{
-    height:100vh; position:relative; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; text-align:center;
-    padding:0 2rem;
-  }
-  #threadSvg{ position:absolute; inset:0; width:100%; height:100%; }
-  #threadSvg path{
-    fill:none; stroke:var(--gold); stroke-width:1.4;
-    stroke-dasharray:2400; stroke-dashoffset:2400;
-    animation:draw 3.2s cubic-bezier(0.65,0,0.35,1) forwards 0.3s;
-    opacity:0.55;
-  }
-  #threadSvg .branch{ stroke:var(--teal); stroke-dasharray:900; stroke-dashoffset:900; animation-delay:1.6s; animation-duration:1.8s; opacity:0.4;}
-  @keyframes draw{ to{ stroke-dashoffset:0; } }
+.sidebar-top{ display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+.collapse-btn{
+  background:var(--surface-2); border:1px solid var(--line); color:var(--muted);
+  width:28px; height:28px; flex-shrink:0; cursor:pointer; font-size:13px;
+}
+.collapse-btn:hover{ color:var(--text); border-color:var(--cyan); }
+.brand{
+  font-family:'Orbitron',sans-serif; font-weight:800; font-size:16px; letter-spacing:0.5px;
+  white-space:nowrap; overflow:hidden;
+}
+.brand span{ color:var(--cyan); }
+.sidebar.collapsed .brand{ display:none; }
+@media (max-width:760px){ .sidebar-top{ display:none; } }
 
-  #hero h1{
-    font-size:clamp(3rem, 9vw, 6.5rem); letter-spacing:-0.01em;
-    position:relative; z-index:2;
-  }
-  #hero h1 em{ font-style:italic; color:var(--gold); }
-  #hero p{
-    max-width:34em; color:var(--parchment-dim); font-size:1.15rem; margin-top:1.2rem;
-    font-style:italic; position:relative; z-index:2;
-  }
-  #scrollHint{
-    position:absolute; bottom:2.5rem; font-family:'JetBrains Mono',monospace;
-    font-size:0.7rem; letter-spacing:0.2em; color:var(--parchment-dim);
-    animation:bob 2s ease-in-out infinite;
-  }
-  @keyframes bob{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
+.navbtn{
+  font-family:'Orbitron',sans-serif; font-size:11px; letter-spacing:1px;
+  text-transform:uppercase; text-align:left;
+  background:none; border:1px solid transparent; color:var(--muted);
+  padding:10px 10px; cursor:pointer; white-space:nowrap;
+  transition:color .12s ease, background .12s ease;
+  display:flex; align-items:center; gap:8px;
+}
+.navbtn:hover{ color:var(--text); }
+.navbtn.active{ background:var(--surface); border-color:var(--line); color:var(--cyan); }
+.sidebar.collapsed .navbtn{ justify-content:center; padding:10px 4px; }
+.sidebar.collapsed .nav-label{ display:none; }
 
-  #shelf{ padding:8rem 3rem 6rem; max-width:1200px; margin:0 auto; }
-  #shelf .head{ margin-bottom:3rem; }
-  #shelf h2{ font-size:2.2rem; margin-top:0.5rem; }
+.side-readout{
+  margin-top:auto; padding-top:14px; border-top:1px solid var(--line);
+  font-size:10px; color:var(--muted); line-height:1.7;
+}
+.sidebar.collapsed .side-readout{ display:none; }
+@media (max-width:760px){ .side-readout{ display:none; } }
+.side-readout b{ color:var(--amber); display:block; font-family:'Orbitron',sans-serif; font-size:13px;}
 
-  .grid{
-    display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
-    gap:2px; background:var(--line); border:1px solid var(--line);
-  }
+/* ---------- main ---------- */
+.main{ padding:24px 22px 70px; position:relative; flex:1; min-width:0; }
 
-  .card{
-    background:var(--void); padding:2.4rem 2rem; cursor:pointer;
-    position:relative; overflow:hidden; transition:background 0.35s;
-    opacity:0; transform:translateY(24px);
-  }
-  .card.visible{ animation:rise 0.7s ease forwards; }
-  @keyframes rise{ to{ opacity:1; transform:translateY(0); } }
+.panel{ display:none; }
+.panel.active{ display:block; animation:panelIn 0.28s ease; }
+@keyframes panelIn{ from{ opacity:0; transform:translateY(8px);} to{ opacity:1; transform:translateY(0);} }
+body.reduce-motion .panel.active{ animation:none; }
 
-  .card:hover{ background:var(--void-2); }
-  .card .kind{ font-family:'JetBrains Mono', monospace; font-size:0.65rem; letter-spacing:0.18em; text-transform:uppercase; }
-  .card.fiction .kind{ color:var(--parchment-dim); }
-  .card.interactive .kind{ color:var(--teal); }
-  .card h3{ font-size:1.5rem; margin:0.7rem 0 0.6rem; }
-  .card p{ color:var(--parchment-dim); font-size:0.95rem; }
-  .card .meta{ margin-top:1.2rem; font-family:'JetBrains Mono', monospace; font-size:0.7rem; color:var(--gold); }
-  .card::after{
-    content:''; position:absolute; left:0; bottom:0; height:2px; width:0%;
-    background:var(--gold); transition:width 0.4s ease;
-  }
-  .card:hover::after{ width:100%; }
+.panel h2{
+  font-family:'Orbitron',sans-serif; font-size:15px; letter-spacing:1.5px;
+  text-transform:uppercase; color:var(--text); margin:0 0 4px;
+}
+.panel .sub{ font-size:11px; color:var(--muted); margin-bottom:18px;}
 
-  #reader{
-    position:fixed; inset:0; z-index:300; background:var(--void);
-    transform:translateY(100%); transition:transform 0.55s cubic-bezier(0.65,0,0.35,1);
-    overflow-y:auto;
-  }
-  #reader.open{ transform:translateY(0); }
-  #closeReader{
-    position:fixed; top:1.5rem; right:2rem; z-index:310;
-    font-family:'JetBrains Mono', monospace; font-size:0.75rem; letter-spacing:0.15em;
-    color:var(--parchment); background:none; border:1px solid var(--line);
-    padding:0.6em 1.2em; cursor:pointer;
-  }
-  #closeReader:hover{ border-color:var(--gold); color:var(--gold); }
+/* mine panel */
+.console{ text-align:center; background:var(--surface); border:1px solid var(--line); padding:22px 18px; }
+.ore-readout{
+  font-family:'Orbitron',sans-serif; font-size:clamp(26px,5.5vw,38px);
+  color:var(--amber); margin-bottom:2px; word-break:break-all;
+  transition:text-shadow .15s ease;
+}
+.ore-readout.flash{ text-shadow:0 0 14px rgba(255,180,84,0.7); }
+.ore-rate{ font-size:12px; color:var(--muted); margin-bottom:6px;}
+.loc-tag{ font-size:11px; color:var(--cyan); margin-bottom:18px;}
 
-  .readerInner{ max-width:680px; margin:0 auto; padding:8rem 2rem 10rem; }
-  .readerInner .eyebrow{ margin-bottom:1rem; }
-  .readerInner h2{ font-size:2.6rem; margin-bottom:2rem; }
-  .readerInner .dropcap:first-letter{
-    font-family:'Fraunces', serif; font-size:4.2rem; float:left; line-height:0.8;
-    margin:0.1em 0.08em 0 0; color:var(--gold);
-  }
-  .readerInner p{ margin-bottom:1.4rem; font-size:1.15rem; color:var(--parchment); min-height:1.6em; }
-  .cursor-blink{ opacity:0.7; animation:blink 0.9s step-end infinite; color:var(--gold); }
-  @keyframes blink{ 50%{opacity:0} }
+.rock-wrap{ position:relative; display:flex; justify-content:center; margin-bottom:16px; height:220px; align-items:center;}
 
-  .page-fold{
-    position:relative; height:1px; margin:3.5rem 0; background:var(--line);
-    opacity:0; transform:scaleX(0); transform-origin:left; transition:opacity 0.4s, transform 0.6s ease;
-  }
-  .page-fold.shown{ opacity:1; transform:scaleX(1); }
-  .page-fold::after{
-    content:'\2767'; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-    background:var(--void); padding:0 1rem; color:var(--gold); font-size:0.8rem;
-  }
+.planet-ring{
+  position:absolute; top:50%; left:50%; width:230px; height:74px;
+  border:3px solid var(--cyan); border-radius:50%; opacity:0.32;
+  transform:translate(-50%,-50%) rotate(-15deg); z-index:1; pointer-events:none;
+  transition:border-color .4s ease;
+}
 
-  .thread-map{ display:flex; gap:0.4rem; margin:2.5rem 0; align-items:center; }
-  .thread-map .node{ width:8px; height:8px; border-radius:50%; background:var(--line); }
-  .thread-map .node.lit{ background:var(--gold); box-shadow:0 0 8px var(--gold); }
-  .thread-map .seg{ flex:1; height:1px; background:var(--line); }
-  .thread-map .seg.lit{ background:var(--gold); }
+#rockBtn{
+  width:160px; height:160px; border-radius:50%;
+  background:radial-gradient(circle at 32% 28%, #4a5866, #14191f 68%);
+  border:3px solid var(--cyan);
+  box-shadow:0 0 24px rgba(79,216,224,0.25), inset 0 0 30px rgba(0,0,0,0.5);
+  cursor:pointer; color:var(--cyan); position:relative; z-index:2; overflow:hidden;
+  font-family:'Orbitron',sans-serif; font-size:12px; letter-spacing:1px;
+  display:flex; align-items:center; justify-content:center;
+  transition:transform .12s cubic-bezier(.34,1.56,.64,1), border-color .4s ease;
+  user-select:none;
+  animation:breathe 2.6s ease-in-out infinite;
+}
+#rockBtn::before{
+  content:''; position:absolute; inset:0; border-radius:50%;
+  background:conic-gradient(from 0deg, rgba(255,255,255,0.06), transparent 25%, rgba(255,255,255,0.09), transparent 55%, rgba(255,255,255,0.04), transparent 85%);
+  animation:swirl 16s linear infinite;
+}
+#rockBtn::after{
+  content:''; position:absolute; inset:0; border-radius:50%;
+  background:radial-gradient(circle at 70% 75%, rgba(0,0,0,0.55), transparent 55%);
+}
+@keyframes swirl{ from{ transform:rotate(0deg);} to{ transform:rotate(360deg);} }
+body.reduce-motion #rockBtn::before{ animation:none; }
+body.reduce-motion #rockBtn{ animation:none; }
+@keyframes breathe{
+  0%,100%{ box-shadow:0 0 24px rgba(79,216,224,0.25), inset 0 0 30px rgba(0,0,0,0.5); }
+  50%{ box-shadow:0 0 38px rgba(79,216,224,0.42), inset 0 0 30px rgba(0,0,0,0.5); }
+}
+#rockBtn.pressed{ transform:scale(0.9); box-shadow:0 0 46px rgba(79,216,224,0.6), inset 0 0 30px rgba(0,0,0,0.5);}
 
-  .choices{ display:flex; flex-direction:column; gap:0.9rem; margin-top:2.5rem; }
-  .choice-btn{
-    text-align:left; background:none; border:1px solid var(--line); color:var(--parchment);
-    font-family:'Newsreader', serif; font-style:italic; font-size:1.05rem;
-    padding:1.1em 1.4em; cursor:pointer; transition:all 0.25s;
-  }
-  .choice-btn:hover{ border-color:var(--teal); background:rgba(74,128,120,0.08); }
-  .choice-btn .arrow{ font-family:'JetBrains Mono',monospace; color:var(--gold); margin-right:0.6em; font-style:normal; }
+.ring{
+  position:absolute; border:2px solid var(--cyan); border-radius:50%;
+  width:160px; height:160px; opacity:0.6; pointer-events:none;
+  animation:ringPulse 0.55s ease-out forwards;
+}
+@keyframes ringPulse{ 0%{ transform:scale(1); opacity:0.55;} 100%{ transform:scale(1.65); opacity:0;} }
+
+.spark{
+  position:absolute; top:50%; left:50%; width:4px; height:4px; border-radius:50%;
+  background:var(--amber); pointer-events:none;
+  transform:translate(-50%,-50%) rotate(var(--ang)) translateX(0);
+  animation:sparkFly 0.5s ease-out forwards;
+}
+@keyframes sparkFly{
+  0%{ opacity:1; transform:translate(-50%,-50%) rotate(var(--ang)) translateX(0); }
+  100%{ opacity:0; transform:translate(-50%,-50%) rotate(var(--ang)) translateX(var(--dist)); }
+}
+
+.pop{
+  position:absolute; pointer-events:none;
+  font-family:'JetBrains Mono',monospace; font-weight:700;
+  color:var(--amber); font-size:14px; top:50%; left:50%;
+  animation:floatUp 0.85s cubic-bezier(.2,.7,.3,1) forwards;
+}
+@keyframes floatUp{
+  0%{ opacity:1; transform:translate(-50%,-50%) translateY(0) scale(1);}
+  100%{ opacity:0; transform:translate(-50%,-50%) translateY(-70px) translateX(var(--dx)) scale(1.1);}
+}
+
+.click-stat{ font-size:12px; color:var(--muted); margin-bottom:16px;}
+
+.quickbuy{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.quickbuy button{
+  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700;
+  background:var(--surface-2); border:1px solid var(--line); color:var(--text);
+  padding:8px 12px; cursor:pointer; transition:transform .1s ease, border-color .1s ease;
+}
+.quickbuy button:hover:not(:disabled){ border-color:var(--cyan); color:var(--cyan); transform:translateY(-1px);}
+.quickbuy button:disabled{ opacity:0.35; cursor:not-allowed;}
+
+/* structures / minions panels */
+.section-label{
+  font-family:'Orbitron',sans-serif; font-size:11px; letter-spacing:1px;
+  color:var(--muted); margin:18px 0 8px; text-transform:uppercase;
+}
+.buy-row{
+  display:flex; justify-content:space-between; align-items:center;
+  gap:10px; padding:12px 14px; border:1px solid var(--line);
+  background:var(--surface); margin-bottom:8px;
+  transition:border-color .15s ease, transform .15s ease;
+}
+.buy-row:hover{ border-color:#334252; transform:translateY(-1px); }
+.buy-row.devourer{ border-color:var(--violet); }
+.buy-info b{ display:block; font-family:'Orbitron',sans-serif; font-size:13px; color:var(--text);}
+.buy-info .desc{ font-size:11px; color:var(--muted); margin-top:2px;}
+.buy-info .owned{ font-size:11px; color:var(--cyan); margin-top:2px;}
+.buy-btn{
+  font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px;
+  background:var(--surface-2); border:1px solid var(--line); color:var(--text);
+  padding:9px 12px; cursor:pointer; white-space:nowrap; min-width:92px;
+  transition:border-color .1s ease, color .1s ease;
+}
+.buy-btn:hover:not(:disabled){ border-color:var(--cyan); color:var(--cyan);}
+.buy-btn:disabled{ opacity:0.35; cursor:not-allowed;}
+
+/* travel panel */
+.ship-gate{ background:var(--surface); border:1px solid var(--line); padding:20px; text-align:center; }
+.ship-gate p{ font-size:12px; color:var(--muted); line-height:1.7; max-width:440px; margin:0 auto 16px;}
+.build-btn{
+  font-family:'Orbitron',sans-serif; font-weight:700; font-size:13px;
+  background:var(--cyan); border:1px solid var(--cyan); color:#0a0f16;
+  padding:11px 20px; cursor:pointer;
+}
+.build-btn:hover:not(:disabled){ background:transparent; color:var(--cyan);}
+.build-btn:disabled{ opacity:0.3; cursor:not-allowed;}
+
+.planet-card{
+  background:var(--surface); border:1px solid var(--line); padding:16px; margin-bottom:12px;
+  display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; align-items:center;
+  transition:border-color .15s ease;
+}
+.planet-card:hover{ border-color:#334252; }
+.planet-info b{ font-family:'Orbitron',sans-serif; font-size:14px; display:block; color:var(--text);}
+.planet-info .flavor{ font-size:11px; color:var(--muted); margin:4px 0 6px; max-width:360px;}
+.planet-info .req{ font-size:10px; color:var(--violet);}
+.planet-btn{
+  font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px;
+  padding:10px 14px; cursor:pointer; white-space:nowrap;
+  background:var(--surface-2); border:1px solid var(--line); color:var(--text);
+}
+.planet-btn.current{ border-color:var(--green); color:var(--green); cursor:default; }
+.planet-btn.travel{ border-color:var(--cyan); color:var(--cyan); }
+.planet-btn:disabled{ opacity:0.35; cursor:not-allowed;}
+
+/* prestige / universe panel */
+.prestige-box{ background:var(--surface); border:1px solid var(--line); padding:20px;}
+.prestige-box p{ font-size:12px; color:var(--muted); line-height:1.7; margin:0 0 14px;}
+.prestige-gain{ color:var(--violet); font-weight:700;}
+.prestige-btn{
+  font-family:'Orbitron',sans-serif; font-weight:700; font-size:13px;
+  background:var(--violet); border:1px solid var(--violet); color:#0a0f16;
+  padding:11px 18px; cursor:pointer; width:100%; letter-spacing:0.5px;
+}
+.prestige-btn:hover:not(:disabled){ background:transparent; color:var(--violet);}
+.prestige-btn:disabled{ opacity:0.3; cursor:not-allowed;}
+.universe-gain{ color:#ff9ce0; font-weight:700; }
+.universe-btn{
+  font-family:'Orbitron',sans-serif; font-weight:700; font-size:13px;
+  background:#ff9ce0; border:1px solid #ff9ce0; color:#0a0f16;
+  padding:11px 18px; cursor:pointer; width:100%; letter-spacing:0.5px;
+}
+.universe-btn:hover:not(:disabled){ background:transparent; color:#ff9ce0; }
+.universe-btn:disabled{ opacity:0.3; cursor:not-allowed;}
+.universe-stats{ display:flex; gap:24px; margin-bottom:16px; }
+.universe-stats div b{ display:block; font-family:'Orbitron',sans-serif; font-size:22px; color:#ff9ce0; }
+.universe-stats div span{ font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+
+/* settings panel */
+.settings-box{ background:var(--surface); border:1px solid var(--line); padding:20px; }
+.setting-row{ display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); }
+.setting-row:last-child{ border-bottom:none; }
+.setting-row .label{ font-size:12px; color:var(--text); }
+.setting-row .hint{ font-size:10px; color:var(--muted); margin-top:2px;}
+.toggle-btn{
+  font-family:'JetBrains Mono',monospace; font-weight:700; font-size:11px;
+  background:var(--surface-2); border:1px solid var(--line); color:var(--muted);
+  padding:7px 14px; cursor:pointer; min-width:64px;
+}
+.toggle-btn.on{ color:var(--green); border-color:var(--green); }
+
+.save-panel{ margin-top:18px;}
+.save-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+.save-actions button{
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  background:var(--surface-2); border:1px solid var(--line); color:var(--muted);
+  padding:7px 10px; cursor:pointer;
+}
+.save-actions button:hover{ color:var(--text); border-color:var(--cyan);}
+textarea{
+  width:100%; height:64px; background:var(--surface-2); color:var(--text);
+  border:1px solid var(--line); font-family:'JetBrains Mono',monospace; font-size:11px;
+  padding:8px; resize:vertical; display:none;
+}
+textarea.show{ display:block; margin-top:8px;}
+.save-note{ font-size:10px; color:var(--muted); margin-top:6px; line-height:1.5;}
+
+/* credits panel */
+.credits-box{ background:var(--surface); border:1px solid var(--line); padding:22px; }
+.credits-box .role{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px;}
+.credits-box .name{ font-family:'Orbitron',sans-serif; font-size:20px; color:var(--amber); margin:4px 0 16px;}
+.credits-box p{ font-size:12px; color:var(--muted); line-height:1.8; }
+.version-tag{ display:inline-block; margin-top:14px; font-size:10px; color:var(--cyan); border:1px solid var(--line); padding:4px 8px; }
+
+/* toasts */
+.toast-stack{ position:fixed; top:16px; right:16px; z-index:50; display:flex; flex-direction:column; gap:8px; max-width:280px; }
+@media (max-width:760px){ .toast-stack{ left:16px; right:16px; max-width:none; } }
+.toast{
+  background:var(--surface); border:1px solid var(--cyan); border-left:3px solid var(--cyan);
+  padding:10px 12px; font-size:11px; color:var(--text);
+  box-shadow:0 4px 16px rgba(0,0,0,0.4); animation:toastIn 0.25s ease-out;
+  position:relative; transition:opacity .25s ease, transform .25s ease;
+}
+.toast.leaving{ opacity:0; transform:translateX(20px); }
+.toast.milestone{ border-color:var(--violet); border-left-color:var(--violet); }
+@keyframes toastIn{ 0%{ opacity:0; transform:translateX(20px);} 100%{ opacity:1; transform:translateX(0);} }
+.toast .t-label{ font-family:'Orbitron',sans-serif; font-size:9px; letter-spacing:1px; color:var(--muted); text-transform:uppercase; margin-bottom:3px; }
+.toast .t-close{ position:absolute; top:6px; right:8px; cursor:pointer; color:var(--muted); font-size:12px; line-height:1; }
+.toast .t-close:hover{ color:var(--text); }
+
+/* modal */
+.modal-overlay{ position:fixed; inset:0; background:rgba(5,8,12,0.72); display:none; align-items:center; justify-content:center; z-index:100; padding:20px; }
+.modal-overlay.show{ display:flex; animation:overlayIn 0.15s ease; }
+@keyframes overlayIn{ from{opacity:0;} to{opacity:1;} }
+.modal-box{ background:var(--surface); border:1px solid var(--cyan); max-width:360px; width:100%; padding:22px; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
+.modal-title{ font-family:'Orbitron',sans-serif; font-size:15px; color:var(--text); margin-bottom:10px;}
+.modal-msg{ font-size:12px; color:var(--muted); line-height:1.7; margin-bottom:18px;}
+.modal-actions{ display:flex; gap:10px; justify-content:flex-end; }
+.modal-actions button{
+  font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px;
+  padding:9px 16px; cursor:pointer; border:1px solid var(--line); background:var(--surface-2); color:var(--text);
+}
+#modalConfirm{ border-color:var(--cyan); color:var(--cyan); }
+#modalConfirm:hover{ background:var(--cyan); color:#0a0f16; }
+#modalCancel:hover{ color:var(--text); border-color:#334252; }
 </style>
 </head>
 <body>
 
-<nav>
-  <div class="logo">THREADBARE</div>
-  <div class="navlinks"><a href="#shelf">LIBRARY</a><a href="#">ABOUT</a></div>
-</nav>
+<div class="travel-flash" id="travelFlash"></div>
+<div class="toast-stack" id="toastStack"></div>
 
-<section id="hero">
-  <svg id="threadSvg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
-    <path d="M -50 600 C 200 500, 300 700, 500 550 S 800 400, 1000 500 S 1300 300, 1400 350" />
-    <path class="branch" d="M 500 550 C 600 620, 650 700, 550 780" />
-    <path class="branch" d="M 1000 500 C 1080 440, 1150 460, 1220 400" />
-  </svg>
-  <p class="eyebrow">A LIBRARY WITH FORKS IN THE ROAD</p>
-  <h1>Stories that <em>branch</em>.</h1>
-  <p>Some are meant to be read straight through. Others fork the moment you touch them &mdash; and remember which way you went.</p>
-  <div id="scrollHint">SCROLL ↓</div>
-</section>
-
-<section id="shelf">
-  <div class="head">
-    <p class="eyebrow">THE SHELF</p>
-    <h2>Four stories, two kinds of reading.</h2>
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTitle">Title</div>
+    <div class="modal-msg" id="modalMsg">Message</div>
+    <div class="modal-actions">
+      <button id="modalCancel">Cancel</button>
+      <button id="modalConfirm">Confirm</button>
+    </div>
   </div>
-  <div class="grid" id="grid"></div>
-</section>
+</div>
 
-<div id="reader">
-  <button id="closeReader">CLOSE ✕</button>
-  <div class="readerInner" id="readerInner"></div>
+<div class="shell">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <button class="collapse-btn" id="sidebarToggle">≡</button>
+      <div class="brand">DRIFT<span>·</span>COLONY</div>
+    </div>
+    <button class="navbtn active" data-panel="mine">⛏ <span class="nav-label">Mine</span></button>
+    <button class="navbtn" data-panel="structures">🏗 <span class="nav-label">Structures</span></button>
+    <button class="navbtn" data-panel="minions">👾 <span class="nav-label">Minions</span></button>
+    <button class="navbtn" data-panel="travel">🚀 <span class="nav-label">Travel</span></button>
+    <button class="navbtn" data-panel="prestige">✨ <span class="nav-label">Prestige</span></button>
+    <button class="navbtn" data-panel="universe">🌌 <span class="nav-label">Universe</span></button>
+    <button class="navbtn" data-panel="settings">⚙ <span class="nav-label">Settings</span></button>
+    <button class="navbtn" data-panel="credits">ℹ <span class="nav-label">Credits</span></button>
+    <div class="side-readout">
+      star dust<b id="stardustValSide">0</b>
+      universe cores<b id="coresValSide">0</b>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- MINE -->
+    <div class="panel active" id="panel-mine">
+      <h2>Mining Console</h2>
+      <div class="sub">Manual extraction terminal</div>
+      <div class="console">
+        <div class="ore-readout" id="oreVal">0</div>
+        <div class="ore-rate" id="oreRate">+0 ore/sec</div>
+        <div class="loc-tag" id="locTag">Location: Asteroid Drift</div>
+
+        <div class="rock-wrap">
+          <div class="planet-ring"></div>
+          <button id="rockBtn">MINE</button>
+        </div>
+        <div class="click-stat" id="clickStat">+1 ore / click</div>
+
+        <div class="quickbuy" id="quickBuy"></div>
+      </div>
+    </div>
+
+    <!-- STRUCTURES -->
+    <div class="panel" id="panel-structures">
+      <h2>Structures</h2>
+      <div class="sub">Automated production &amp; multipliers</div>
+      <div id="buildingsList"></div>
+    </div>
+
+    <!-- MINIONS -->
+    <div class="panel" id="panel-minions">
+      <h2>Minions</h2>
+      <div class="sub">Stackable hires that upgrade your mines and pickaxes (max 500 each)</div>
+      <div id="minionsList"></div>
+    </div>
+
+    <!-- TRAVEL -->
+    <div class="panel" id="panel-travel">
+      <h2>Travel</h2>
+      <div class="sub">Reach new mining grounds</div>
+      <div id="travelContent"></div>
+    </div>
+
+    <!-- PRESTIGE -->
+    <div class="panel" id="panel-prestige">
+      <h2>Prestige</h2>
+      <div class="sub">Reset for permanent power</div>
+      <div class="prestige-box">
+        <p>Colonizing a new system resets your ore, structures, and current location, but converts total ore ever mined into permanent <span class="prestige-gain">Star Dust</span> — each point adds +2% to all production, forever. Your Mining Vessel, unlocked planets, and hired minions stay with you.</p>
+        <p id="prestigePreview">Colonizing now grants <span class="prestige-gain">+0 Star Dust</span></p>
+        <button class="prestige-btn" id="prestigeBtn" disabled>Colonize New System</button>
+      </div>
+    </div>
+
+    <!-- UNIVERSE -->
+    <div class="panel" id="panel-universe">
+      <h2>Universe</h2>
+      <div class="sub">The deepest reset — trade everything for permanent scale</div>
+      <div class="prestige-box">
+        <div class="universe-stats">
+          <div><b id="coresVal">0</b><span>Universe Cores</span></div>
+          <div><b id="universeLevelVal">0</b><span>Universes Ascended</span></div>
+        </div>
+        <p>Ascending trades <em>all</em> your Star Dust for <span class="universe-gain">Universe Cores</span> — each core adds +50% to all production, forever. Everything else resets to zero: ore, Star Dust, structures, minions, planets, and your ship. Ascending also permanently unlocks a new Universal tier of extreme-cost structures and minions.</p>
+        <p id="universePreview">Ascending now grants <span class="universe-gain">+0 Universe Core(s)</span></p>
+        <button class="universe-btn" id="ascendBtn" disabled>Ascend to New Universe</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="panel" id="panel-settings">
+      <h2>Settings</h2>
+      <div class="sub">Preferences &amp; save management</div>
+      <div class="settings-box">
+        <div class="setting-row">
+          <div><div class="label">Dev tip notifications</div><div class="hint">Rotating tips in the top-right corner</div></div>
+          <button class="toggle-btn" id="toggleTips">ON</button>
+        </div>
+        <div class="setting-row">
+          <div><div class="label">Click sound</div><div class="hint">Short tone when you mine</div></div>
+          <button class="toggle-btn" id="toggleSound">ON</button>
+        </div>
+        <div class="setting-row">
+          <div><div class="label">Reduce animations</div><div class="hint">Turns off pulsing, sparks, starfield, and transitions</div></div>
+          <button class="toggle-btn" id="toggleMotion">OFF</button>
+        </div>
+      </div>
+
+      <div class="save-panel">
+        <div class="save-actions">
+          <button id="exportBtn">Export Save</button>
+          <button id="importBtn">Import Save</button>
+          <button id="resetBtn">Reset Everything</button>
+        </div>
+        <textarea id="saveArea" placeholder="Paste save code here to import..."></textarea>
+        <div class="save-note">Autosaves to this browser when possible. Export a save code before closing if you want a backup you can restore anywhere.</div>
+      </div>
+    </div>
+
+    <!-- CREDITS -->
+    <div class="panel" id="panel-credits">
+      <h2>Credits</h2>
+      <div class="sub">About this build</div>
+      <div class="credits-box">
+        <div class="role">Created by</div>
+        <div class="name">Jake Coreman</div>
+        <p>Drift Colony is an idle mining game built around one core loop: extract, automate, multiply, and eventually reset for permanent gains — now three layers deep. It's still under active development.</p>
+        <p>Thanks for playing an in-progress build. Feedback shapes what gets built next.</p>
+        <div class="version-tag">v0.4 — in development</div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <script>
-const stories = [
-  {
-    id:'lighthouse', kind:'fiction', label:'SERIALIZED FICTION', title:'The Lighthouse Keeper\u2019s Ledger',
-    blurb:'Six entries from a keeper who stopped writing about the weather and started writing about what he saw in it.',
-    meta:'Ch. 3 of 6',
-    paras:[
-      'The lamp turned without me that night, and I let it. I sat on the gallery floor and watched the beam sweep the water, over and over, indifferent to whether I lived behind it.',
-      'There was a boat out past the second buoy. No lights of its own \u2014 it only existed in the half-second the beam touched it, then vanished again into the dark, like something that could only be seen and never kept.',
-      'I told myself it was a trick of salt spray on the lens. I have told myself worse things and believed them longer.',
-      'By the fourth pass, the boat was closer. By the sixth, it was gone entirely, and I found I had been holding the ledger so tightly the pencil had torn clean through the page.'
-    ]
-  },
-  {
-    id:'orchard', kind:'fiction', label:'SERIALIZED FICTION', title:'What the Orchard Kept',
-    blurb:'A family returns to a house they sold nine years ago, and the trees remember exactly what was buried beneath them.',
-    meta:'Ch. 1 of 8',
-    paras:[
-      'The new owners had let the orchard go feral, which Mara decided was the only decent thing they\u2019d done with the place.',
-      'She found the third tree from the fence line easily \u2014 easier than she wanted to admit \u2014 and stood over the roots for a long time before she let herself kneel.',
-      'The ground here had always been soft. That was the whole problem, back then. That was why it had been so easy.'
-    ]
-  },
-  {
-    id:'archive', kind:'interactive', label:'INTERACTIVE', title:'The Archive Wants One Thing',
-    blurb:'You\u2019re alone in a records room after hours. Something in the stacks is cataloguing you back.',
-    meta:'3 paths \u00b7 ~4 min',
-    start:'a1',
-    nodes:{
-      a1:{ text:'The reading room lights are on a timer, and yours ran out four minutes ago. In the dark between the shelves, you can hear something turning pages \u2014 slowly, deliberately, like it\u2019s looking for a specific one.', choices:[
-        {label:'Call out into the stacks', go:'a2'},
-        {label:'Follow the sound quietly', go:'a3'}
-      ]},
-      a2:{ text:'Your voice comes back to you wrong \u2014 a half-second delayed, in a register that isn\u2019t quite yours. The page-turning stops. Then, from every shelf at once, it starts again, faster.', choices:[
-        {label:'Run for the exit', go:'end_run'},
-        {label:'Stand very still', go:'end_still'}
-      ]},
-      a3:{ text:'You find the sound at the genealogy shelf. A ledger lies open on the floor, pages turning in a draft that doesn\u2019t exist \u2014 and it has stopped on a page with your name at the top, half-filled in.', choices:[
-        {label:'Read what\u2019s written so far', go:'end_read'},
-        {label:'Close the ledger', go:'end_close'}
-      ]},
-      end_run:{ text:'You make it to the door. When you look back through the glass, every shelf is empty, and every book is stacked, instead, in a neat pile at the exact spot you were just standing.', end:true },
-      end_still:{ text:'The pages stop. In the silence after, you hear the unmistakable scratch of a pen \u2014 writing something down. You never find out what.', end:true },
-      end_read:{ text:'It\u2019s a record of tonight. Of you, right now, reading this sentence. The next line is still being written as you watch it appear.', end:true },
-      end_close:{ text:'The ledger shuts itself before your hand reaches it. On the cover, where a title should be, is a date that hasn\u2019t happened yet.', end:true }
-    }
-  },
-  {
-    id:'signal', kind:'interactive', label:'INTERACTIVE', title:'Last Transmission from Bell 7',
-    blurb:'A relay station operator picks up a signal that shouldn\u2019t exist, and has to decide how far to follow it.',
-    meta:'3 paths \u00b7 ~3 min',
-    start:'s1',
-    nodes:{
-      s1:{ text:'The signal comes in on a frequency that was decommissioned in 1961. It repeats a single phrase, over and over, in your own voice: "Don\u2019t answer this."', choices:[
-        {label:'Answer it anyway', go:'s2'},
-        {label:'Log it and shut down the relay', go:'s3'}
-      ]},
-      s2:{ text:'The moment you key the mic, the phrase changes. It starts describing the room you\u2019re sitting in \u2014 correctly, in real time \u2014 as if it can see you through the console.', choices:[
-        {label:'Ask it what it wants', go:'end_ask'},
-        {label:'Cut the transmission', go:'end_cut'}
-      ]},
-      s3:{ text:'You shut it down. In the log, under "signal source," the system has already filled in a location: this room, this desk, this exact second.', end:true },
-      end_ask:{ text:'The voice \u2014 your voice \u2014 goes quiet for a long moment. Then it says: "The same thing you did." You never learn what that meant, only that the relay logs your next shift as already completed.', end:true },
-      end_cut:{ text:'The line goes dead. Weeks later you\u2019ll find your own handwriting in the station log for tonight, describing this exact choice, filed months before you made it.', end:true }
-    }
-  },
-  {
-    id:'rooms', kind:'fiction', label:'SERIALIZED FICTION', title:'The Weight of Small Rooms',
-    blurb:'A building inspector notices that one apartment in the complex measures smaller on every visit, by exactly the width of a doorway.',
-    meta:'Ch. 2 of 5',
-    paras:[
-      'The tape measure said eleven feet four inches. Last month it had said eleven feet nine. I checked the tape against the wall twice, then against the door frame, which was, as far as I could tell, exactly where it had always been.',
-      'The tenant watched me from the kitchen without blinking. "It does that," she said, like she was apologizing for a pet. "It\u2019s getting ready for something."',
-      'I asked her what. She said she used to know, and that not knowing anymore was the part that worried her.',
-      'I wrote "settling, recommend monitoring" on the form, because there was no box for what I actually wanted to write, which was that the room had gotten smaller while I was standing inside it.'
-    ]
-  },
-  {
-    id:'correspondence', kind:'fiction', label:'SERIALIZED FICTION', title:'Correspondence with the Drowned',
-    blurb:'A woman keeps receiving letters from her sister, postmarked three days after the boating accident that killed her.',
-    meta:'Ch. 1 of 7',
-    paras:[
-      'The first letter I assumed was posted before she died and simply delayed, the way mail sometimes is. The second one mentioned the funeral.',
-      'She wrote about the weather down there, which she described as patient. She wrote that she\u2019d met our grandmother, who she\u2019d never met living, and that grandmother sent her love, and a warning I wasn\u2019t ready for yet.',
-      'I stopped opening the mailbox after dark. It didn\u2019t stop the letters from arriving.'
-    ]
-  },
-  {
-    id:'seance', kind:'interactive', label:'INTERACTIVE', title:'The House Always Wins',
-    blurb:'Four friends run a séance as a joke. The table answers a question none of you asked.',
-    meta:'3 paths \u00b7 ~4 min',
-    start:'h1',
-    nodes:{
-      h1:{ text:'The glass moves before anyone\u2019s fingers are steady on it. It spells out a name that isn\u2019t on your guest list, then asks, letter by letter, who invited it.', choices:[
-        {label:'Answer honestly \u2014 no one did', go:'h2'},
-        {label:'Knock the glass off the table', go:'h3'}
-      ]},
-      h2:{ text:'The glass is still for a long moment. Then it spells: "GOOD. THAT MAKES THIS EASIER." The candles gutter out in an order that spells something too, if you\u2019re fast enough to read it.', choices:[
-        {label:'Try to read what the candles spelled', go:'end_candles'},
-        {label:'Turn the lights on immediately', go:'end_lights'}
-      ]},
-      h3:{ text:'The glass shatters on the floor, but the pointer keeps moving across the bare table, dragging a thin bead of something dark behind it that isn\u2019t ink.', end:true },
-      end_candles:{ text:'You catch three letters before the last candle dies: Y, O, U. You spend the rest of the night wondering how that sentence was going to end, and whose name was going to finish it.', end:true },
-      end_lights:{ text:'The lights come on. Everyone is exactly where they were, except the friend who was holding the glass, who is now sitting one chair further from the table than before, and doesn\u2019t remember moving.', end:true }
-    }
-  },
-  {
-    id:'channel9', kind:'interactive', label:'INTERACTIVE', title:'Static on Channel 9',
-    blurb:'A night-shift TV repairman finds a set that only plays one channel \u2014 a broadcast of his own apartment, live.',
-    meta:'3 paths \u00b7 ~3 min',
-    start:'c1',
-    nodes:{
-      c1:{ text:'Every channel button leads to the same feed: a static-grained shot of your living room, from an angle no camera in your apartment could produce. On the tiny screen, your armchair rocks, once, though you\u2019re not near it.', choices:[
-        {label:'Call your apartment landline from the shop', go:'c2'},
-        {label:'Drive home immediately', go:'c3'}
-      ]},
-      c2:{ text:'It rings twice. On the screen, the phone on your side table lights up and rings in perfect sync \u2014 and then a hand that isn\u2019t yours picks it up.', choices:[
-        {label:'Say hello', go:'end_hello'},
-        {label:'Hang up and call the police instead', go:'end_police'}
-      ]},
-      c3:{ text:'You get home to find the apartment empty and undisturbed. It\u2019s only later, alone in the dark, that you remember the shop TV is still plugged in behind you, still playing its channel, and you never checked what it was showing before you left.', end:true },
-      end_hello:{ text:'Nothing answers. But on the little screen, your armchair turns slightly, as if something in it just registered being spoken to for the first time.', end:true },
-      end_police:{ text:'They find nothing out of place. But the responding officer mentions, almost as an aside, that your porch light was on when they arrived \u2014 and you\u2019re certain, absolutely certain, that you never once turned it on.', end:true }
-    }
-  }
+/* ================= CONFIG ================= */
+const BUILDINGS = [
+  { id:'drone', name:'Mining Drone', desc:'+0.5 ore/sec each', baseCost:10, growth:1.15, rate:0.5, unlockAt:0, tier:'core' },
+  { id:'laser', name:'Mining Laser', desc:'+1 ore per click, each', baseCost:15, growth:1.15, clickBonus:1, unlockAt:0, tier:'core' },
+  { id:'slot', name:'Mining Slot', desc:'Auto-mines for you, scaling with your click power', baseCost:50, growth:1.16, tier:'slots', dynamic:true, unlockAt:0 },
+  { id:'refinery', name:'Refinery', desc:'+10% to all production, each', baseCost:120, growth:1.2, multBonus:0.10, unlockAt:50, tier:'core' },
+  { id:'autoRig', name:'Auto-Rig', desc:'Simulates +2 ore/sec of clicking, each', baseCost:300, growth:1.17, rate:2, unlockAt:2000, tier:'core' },
+  { id:'warpDrone', name:'Warp Drone', desc:'+9 ore/sec each', baseCost:1500, growth:1.18, rate:9, unlockAt:800, tier:'core' },
+  { id:'cargoHauler', name:'Cargo Hauler', desc:'+15% to all production, each', baseCost:8000, growth:1.22, multBonus:0.15, unlockAt:15000, tier:'core' },
+  { id:'plasmaCutter', name:'Plasma Cutter', desc:'+8 ore per click, each', baseCost:5000, growth:1.2, clickBonus:8, unlockAt:20000, tier:'core' },
+  { id:'ironExtractor', name:'Iron Extractor', desc:'+15 ore/sec each', baseCost:2500, growth:1.19, rate:15, unlockAt:0, tier:'rusthollow' },
+  { id:'cryoHarvester', name:'Cryo Harvester', desc:'+60 ore/sec each', baseCost:40000, growth:1.2, rate:60, unlockAt:0, tier:'glacier' },
+  { id:'magmaDrill', name:'Magma Drill', desc:'+300 ore/sec each', baseCost:250000, growth:1.22, rate:300, unlockAt:0, tier:'embercore' },
+  { id:'dysonCollector', name:'Dyson Collector', desc:'+5000 ore/sec each', baseCost:1e9, growth:1.25, rate:5000, tier:'universal' },
+  { id:'singularityForge', name:'Singularity Forge', desc:'+30% to all production, each', baseCost:5e9, growth:1.28, multBonus:0.30, tier:'universal' },
 ];
 
-const grid = document.getElementById('grid');
-stories.forEach(s=>{
-  const card = document.createElement('div');
-  card.className = 'card ' + s.kind;
-  card.innerHTML = `
-    <div class="kind">${s.label}</div>
-    <h3>${s.title}</h3>
-    <p>${s.blurb}</p>
-    <div class="meta">${s.meta}</div>
-  `;
-  card.onclick = ()=> openStory(s);
-  grid.appendChild(card);
+const LOCATIONS = [
+  { id:'home', name:'Asteroid Drift', flavor:'Your starting claim. Steady, unremarkable, reliable.', mult:1, oreReq:0, dustCost:0 },
+  { id:'rusthollow', name:'Rusthollow Moon', flavor:'An iron-rich moon streaked with old mining scars.', mult:1.5, oreReq:5000, dustCost:1 },
+  { id:'glacier', name:'Glacier Rings', flavor:'Frozen debris rings around a dead gas giant.', mult:2.2, oreReq:50000, dustCost:3 },
+  { id:'embercore', name:'Ember Core', flavor:'A cracked planet still glowing from its own core.', mult:3.5, oreReq:300000, dustCost:8 },
+];
+
+const MINION_CAP = 500;
+const MINIONS = [
+  { id:'pebbleSprite', name:'Pebble Sprite', desc:'+0.05% click value per unit (max 500)', baseCost:500, growth:1.07, tier:'core', effect:'click', perUnit:0.0005 },
+  { id:'ironGolem', name:'Iron Golem', desc:'+0.05% flat production per unit (max 500)', baseCost:5000, growth:1.07, tier:'core', effect:'flat', perUnit:0.0005 },
+  { id:'cometWhisperer', name:'Comet Whisperer', desc:'+0.03% all production per unit (max 500)', baseCost:50000, growth:1.08, tier:'core', effect:'all', perUnit:0.0003 },
+  { id:'voidSerpent', name:'Void Serpent', desc:'+0.08% click value per unit (max 500)', baseCost:400000, growth:1.08, tier:'core', effect:'click', perUnit:0.0008 },
+  { id:'worldDevourer', name:'World Devourer', desc:'Each unit adds passive ore/sec (5% of click value) and a small permanent discount on all future costs (max 500)', baseCost:3000000, growth:1.09, tier:'core', effect:'devourer', perUnit:0.05 },
+  { id:'rustCrawler', name:'Rust Crawler', desc:'+0.05% flat production per unit (max 500)', baseCost:3000, growth:1.07, tier:'rusthollow', effect:'flat', perUnit:0.0005 },
+  { id:'frostWraith', name:'Frost Wraith', desc:'+0.05% all production per unit (max 500)', baseCost:45000, growth:1.08, tier:'glacier', effect:'all', perUnit:0.0005 },
+  { id:'emberFiend', name:'Ember Fiend', desc:'+0.1% click value per unit (max 500)', baseCost:280000, growth:1.09, tier:'embercore', effect:'click', perUnit:0.001 },
+  { id:'starEater', name:'Star Eater', desc:'+0.2% all production per unit (max 500) — Universal tier', baseCost:1e7, growth:1.1, tier:'universal', effect:'all', perUnit:0.002 },
+];
+
+const TIPS = [
+  "Tip: Refineries and Cargo Haulers multiply everything — prioritize them once you have a few flat producers.",
+  "Tip: Star Dust from Prestige boosts production forever. Don't be afraid to reset once growth stalls.",
+  "This game is under active development — planets, minions, and balance are still changing.",
+  "Tip: Mining Slots scale with click power — pair them with Lasers and Plasma Cutters.",
+  "Tip: You need a Mining Vessel before the Travel tab does anything.",
+  "Tip: Minions stack up to 500 each now — spread investment instead of maxing one early.",
+  "Tip: Ascending to a new Universe resets Star Dust too, but Universe Cores are worth far more.",
+];
+
+/* ================= STATE ================= */
+let state = {
+  ore:0, totalOre:0, stardust:0,
+  universeCores:0, universeLevel:0,
+  shipBuilt:false,
+  currentLocation:'home', unlockedLocations:['home'],
+  owned:{}, minions:{},
+  settings:{ tipsOn:true, soundOn:true, reduceMotion:false }
+};
+BUILDINGS.forEach(b => state.owned[b.id] = 0);
+MINIONS.forEach(m => state.minions[m.id] = 0);
+
+const SHIP_COST = 2000;
+
+/* ================= HELPERS ================= */
+function formatNum(n){
+  if(n < 1000) return n.toFixed(n < 10 ? 1 : 0).replace(/\.0$/,'');
+  const units = ['K','M','B','T','Qa','Qi','Sx','Sp','Oc'];
+  let u = -1;
+  while(n >= 1000 && u < units.length-1){ n /= 1000; u++; }
+  return n.toFixed(2) + units[u];
+}
+function minionBonuses(){
+  let clickBonus=0, flatBonus=0, allBonus=0, devourerUnits=0;
+  MINIONS.forEach(m=>{
+    const n = state.minions[m.id]||0;
+    if(m.effect==='click') clickBonus += n*m.perUnit;
+    if(m.effect==='flat') flatBonus += n*m.perUnit;
+    if(m.effect==='all') allBonus += n*m.perUnit;
+    if(m.effect==='devourer') devourerUnits = n;
+  });
+  return {clickBonus, flatBonus, allBonus, devourerUnits};
+}
+function discountMult(){
+  const units = state.minions.worldDevourer||0;
+  return Math.pow(0.999, units);
+}
+function costOf(b){ return b.baseCost * Math.pow(b.growth, state.owned[b.id]) * discountMult(); }
+function minionCost(m){ return m.baseCost * Math.pow(m.growth, state.minions[m.id]||0) * discountMult(); }
+function stardustMult(){ return 1 + state.stardust * 0.02; }
+function universeMult(){ return 1 + state.universeCores * 0.5; }
+function currentLocationObj(){ return LOCATIONS.find(l => l.id === state.currentLocation); }
+function locationMult(){ return currentLocationObj().mult; }
+
+function clickValue(){
+  const laser = BUILDINGS.find(b=>b.id==='laser');
+  const plasma = BUILDINGS.find(b=>b.id==='plasmaCutter');
+  const base = 1 + state.owned.laser * laser.clickBonus + state.owned.plasmaCutter * plasma.clickBonus;
+  const mb = minionBonuses();
+  const minionMult = 1 + mb.clickBonus + mb.allBonus;
+  return base * minionMult * stardustMult() * locationMult() * universeMult();
+}
+
+function oreRate(){
+  let flat = 0, buildMult = 1;
+  BUILDINGS.forEach(b=>{
+    if(b.rate) flat += state.owned[b.id] * b.rate;
+    if(b.multBonus) buildMult += state.owned[b.id] * b.multBonus;
+  });
+  flat += state.owned.slot * (clickValue() / 3);
+
+  const mb = minionBonuses();
+  const minionMult = 1 + mb.flatBonus + mb.allBonus;
+
+  let result = flat * buildMult * minionMult * stardustMult() * locationMult() * universeMult();
+  result += mb.devourerUnits * clickValue() * 0.05;
+  return result;
+}
+
+function potentialStardust(){ return Math.floor(Math.sqrt(state.totalOre / 10000)); }
+function potentialUniverseCores(){ return Math.floor(state.stardust / 5); }
+
+function buildingUnlocked(b){
+  if(b.tier === 'slots') return true;
+  if(b.tier === 'universal') return state.universeLevel >= 1;
+  if(b.tier === 'core') return state.totalOre >= b.unlockAt || state.owned[b.id] > 0;
+  return state.unlockedLocations.includes(b.tier);
+}
+function minionUnlocked(m){
+  if(m.tier === 'core') return true;
+  if(m.tier === 'universal') return state.universeLevel >= 1;
+  return state.unlockedLocations.includes(m.tier);
+}
+
+/* ================= THEME ================= */
+function applyTheme(locId){
+  Array.from(document.body.classList).forEach(c=>{ if(c.startsWith('theme-')) document.body.classList.remove(c); });
+  document.body.classList.add('theme-' + locId);
+}
+function flashTravel(){
+  const el = document.getElementById('travelFlash');
+  el.classList.add('show');
+  setTimeout(()=> el.classList.remove('show'), 400);
+}
+
+/* ================= MODAL ================= */
+const modalOverlay = document.getElementById('modalOverlay');
+const modalTitle = document.getElementById('modalTitle');
+const modalMsg = document.getElementById('modalMsg');
+const modalConfirm = document.getElementById('modalConfirm');
+const modalCancel = document.getElementById('modalCancel');
+
+function showModal(title, message, onConfirm, opts={}){
+  modalTitle.textContent = title;
+  modalMsg.textContent = message;
+  modalConfirm.textContent = opts.confirmText || 'Confirm';
+  modalCancel.style.display = opts.singleButton ? 'none' : 'inline-block';
+  modalOverlay.classList.add('show');
+  const cleanup = ()=>{
+    modalOverlay.classList.remove('show');
+    modalConfirm.onclick = null;
+    modalCancel.onclick = null;
+  };
+  modalConfirm.onclick = ()=>{ cleanup(); if(onConfirm) onConfirm(); };
+  modalCancel.onclick = cleanup;
+}
+modalOverlay.addEventListener('click', (e)=>{ if(e.target === modalOverlay) modalOverlay.classList.remove('show'); });
+
+/* ================= NOTIFICATIONS ================= */
+const toastStack = document.getElementById('toastStack');
+function toast(msg, milestone=false){
+  const el = document.createElement('div');
+  el.className = 'toast' + (milestone ? ' milestone' : '');
+  el.innerHTML = `<div class="t-label">${milestone ? 'Milestone' : 'Dev Tip'}</div>${msg}<span class="t-close">&times;</span>`;
+  el.querySelector('.t-close').addEventListener('click', ()=> removeToast(el));
+  toastStack.appendChild(el);
+  setTimeout(()=> removeToast(el), 9000);
+  while(toastStack.children.length > 4){ toastStack.removeChild(toastStack.firstChild); }
+}
+function removeToast(el){
+  if(!el.parentNode) return;
+  el.classList.add('leaving');
+  setTimeout(()=> el.remove(), 250);
+}
+let tipIndex = 0;
+setInterval(()=>{
+  if(!state.settings.tipsOn) return;
+  toast(TIPS[tipIndex % TIPS.length]);
+  tipIndex++;
+}, 42000);
+setTimeout(()=>{ if(state.settings.tipsOn) toast(TIPS[0]); }, 3000);
+
+/* ================= NAV ================= */
+document.querySelectorAll('.navbtn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
+    if(btn.dataset.panel === 'travel') renderTravel();
+    if(btn.dataset.panel === 'minions') renderMinions();
+  });
+});
+document.getElementById('sidebarToggle').addEventListener('click', ()=>{
+  const sb = document.getElementById('sidebar');
+  sb.classList.toggle('collapsed');
 });
 
-const obs = new IntersectionObserver(entries=>{
-  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('visible'); obs.unobserve(e.target); } });
-},{threshold:0.15});
-document.querySelectorAll('.card').forEach(c=>obs.observe(c));
+/* ================= RENDER ================= */
+const oreValEl = document.getElementById('oreVal');
+const oreRateEl = document.getElementById('oreRate');
+const clickStatEl = document.getElementById('clickStat');
+const stardustValSideEl = document.getElementById('stardustValSide');
+const coresValSideEl = document.getElementById('coresValSide');
+const buildingsListEl = document.getElementById('buildingsList');
+const minionsListEl = document.getElementById('minionsList');
+const quickBuyEl = document.getElementById('quickBuy');
+const locTagEl = document.getElementById('locTag');
+const prestigePreviewEl = document.getElementById('prestigePreview');
+const prestigeBtn = document.getElementById('prestigeBtn');
+const travelContentEl = document.getElementById('travelContent');
+const coresValEl = document.getElementById('coresVal');
+const universeLevelValEl = document.getElementById('universeLevelVal');
+const universePreviewEl = document.getElementById('universePreview');
+const ascendBtn = document.getElementById('ascendBtn');
 
-const reader = document.getElementById('reader');
-const readerInner = document.getElementById('readerInner');
-document.getElementById('closeReader').onclick = ()=> reader.classList.remove('open');
-
-function openStory(s){
-  reader.classList.add('open');
-  if(s.kind === 'fiction') renderFiction(s);
-  else renderInteractive(s, s.start, []);
-  reader.scrollTop = 0;
-}
-
-function typeInto(el, str, speed, cb){
-  let i = 0;
-  function step(){
-    if(i <= str.length){
-      el.innerHTML = str.slice(0,i) + '<span class="cursor-blink">|</span>';
-      i++;
-      setTimeout(step, speed);
-    } else {
-      el.innerHTML = str;
-      if(cb) cb();
-    }
-  }
-  step();
-}
-
-function renderFiction(s){
-  readerInner.innerHTML = `
-    <p class="eyebrow">${s.label} &middot; ${s.meta}</p>
-    <h2>${s.title}</h2>
-    <div id="paras"></div>
-  `;
-  const container = document.getElementById('paras');
-
-  function typeParagraph(index){
-    if(index >= s.paras.length) return;
-    if(index > 0){
-      const fold = document.createElement('div');
-      fold.className = 'page-fold';
-      container.appendChild(fold);
-      requestAnimationFrame(()=> fold.classList.add('shown'));
-    }
-    const el = document.createElement('p');
-    if(index === 0) el.className = 'dropcap';
-    container.appendChild(el);
-    typeInto(el, s.paras[index], 14, ()=> setTimeout(()=> typeParagraph(index+1), 400));
-  }
-  typeParagraph(0);
-}
-
-function renderInteractive(s, nodeId, path){
-  const node = s.nodes[nodeId];
-  const newPath = [...path, nodeId];
-
-  const mapHtml = newPath.map((n,i)=>{
-    return `<div class="node lit"></div>` + (i < newPath.length-1 ? `<div class="seg lit"></div>` : (node.end ? '' : `<div class="seg"></div><div class="node"></div>`));
-  }).join('');
-
-  readerInner.innerHTML = `
-    <p class="eyebrow">${s.label} &middot; ${s.title}</p>
-    <div class="thread-map">${mapHtml}</div>
-    <p class="dropcap"></p>
-    <div class="choices" id="choicesWrap"></div>
-  `;
-  const p = readerInner.querySelector('.dropcap');
-  const wrap = document.getElementById('choicesWrap');
-
-  typeInto(p, node.text, 15, ()=>{
-    if(node.end){
-      const again = document.createElement('button');
-      again.className = 'choice-btn';
-      again.innerHTML = `<span class="arrow">\u21bb</span>Read from the beginning`;
-      again.onclick = ()=> renderInteractive(s, s.start, []);
-      wrap.appendChild(again);
-    } else {
-      node.choices.forEach(c=>{
-        const btn = document.createElement('button');
-        btn.className = 'choice-btn';
-        btn.innerHTML = `<span class="arrow">\u2192</span>${c.label}`;
-        btn.onclick = ()=> renderInteractive(s, c.go, newPath);
-        wrap.appendChild(btn);
-      });
-    }
+function renderQuickBuy(){
+  quickBuyEl.innerHTML = '';
+  ['drone','laser','slot'].forEach(id=>{
+    const b = BUILDINGS.find(x=>x.id===id);
+    const cost = costOf(b);
+    const btn = document.createElement('button');
+    btn.textContent = `${b.name.split(' ')[0]} — ${formatNum(cost)}`;
+    btn.disabled = state.ore < cost;
+    btn.addEventListener('click', ()=> buyBuilding(id));
+    quickBuyEl.appendChild(btn);
   });
 }
+
+function tierLabel(tier){
+  if(tier === 'core') return 'Core';
+  if(tier === 'slots') return 'Mining Slots';
+  if(tier === 'universal') return 'Universal';
+  const loc = LOCATIONS.find(l=>l.id===tier);
+  return loc ? loc.name : tier;
+}
+
+function renderBuildings(){
+  buildingsListEl.innerHTML = '';
+  let lastTier = null;
+  BUILDINGS.forEach(b=>{
+    if(!buildingUnlocked(b)) return;
+    if(b.tier !== lastTier){
+      const label = document.createElement('div');
+      label.className = 'section-label';
+      label.textContent = tierLabel(b.tier) + ' Structures';
+      buildingsListEl.appendChild(label);
+      lastTier = b.tier;
+    }
+    const cost = costOf(b);
+    let desc = b.desc;
+    if(b.dynamic){
+      desc = `Auto-mines for you — currently +${formatNum(state.owned.slot * (clickValue()/3))} ore/sec total`;
+    }
+    const row = document.createElement('div');
+    row.className = 'buy-row';
+    row.innerHTML = `
+      <div class="buy-info">
+        <b>${b.name}</b>
+        <div class="desc">${desc}</div>
+        <div class="owned">owned: ${state.owned[b.id]}</div>
+      </div>
+      <button class="buy-btn" data-id="${b.id}" ${state.ore < cost ? 'disabled' : ''}>${formatNum(cost)} ore</button>
+    `;
+    buildingsListEl.appendChild(row);
+  });
+  buildingsListEl.querySelectorAll('.buy-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> buyBuilding(btn.dataset.id));
+  });
+}
+
+function renderMinions(){
+  minionsListEl.innerHTML = '';
+  let lastTier = null;
+  MINIONS.forEach(m=>{
+    if(!minionUnlocked(m)) return;
+    if(m.tier !== lastTier){
+      const label = document.createElement('div');
+      label.className = 'section-label';
+      label.textContent = tierLabel(m.tier) + ' Minions';
+      minionsListEl.appendChild(label);
+      lastTier = m.tier;
+    }
+    const owned = state.minions[m.id]||0;
+    const capped = owned >= MINION_CAP;
+    const cost = minionCost(m);
+    const row = document.createElement('div');
+    row.className = 'buy-row' + (m.id === 'worldDevourer' ? ' devourer' : '');
+    row.innerHTML = `
+      <div class="buy-info">
+        <b>${m.name}</b>
+        <div class="desc">${m.desc}</div>
+        <div class="owned">owned: ${owned} / ${MINION_CAP}</div>
+      </div>
+      <button class="buy-btn" data-minion="${m.id}" ${capped || state.ore < cost ? 'disabled' : ''}>
+        ${capped ? 'MAX' : formatNum(cost) + ' ore'}
+      </button>
+    `;
+    minionsListEl.appendChild(row);
+  });
+  minionsListEl.querySelectorAll('[data-minion]').forEach(btn=>{
+    btn.addEventListener('click', ()=> buyMinion(btn.dataset.minion));
+  });
+}
+
+function renderTravel(){
+  travelContentEl.innerHTML = '';
+  if(!state.shipBuilt){
+    const cost = SHIP_COST;
+    const box = document.createElement('div');
+    box.className = 'ship-gate';
+    box.innerHTML = `
+      <p>You'll need a Mining Vessel before you can travel anywhere. It's a one-time construction — after that, the routes to nearby planets stay open.</p>
+      <button class="build-btn" id="buildShipBtn" ${state.ore < cost ? 'disabled' : ''}>Construct Mining Vessel — ${formatNum(cost)} ore</button>
+    `;
+    travelContentEl.appendChild(box);
+    document.getElementById('buildShipBtn').addEventListener('click', buildShip);
+    return;
+  }
+
+  LOCATIONS.forEach(loc=>{
+    const unlocked = state.unlockedLocations.includes(loc.id);
+    const card = document.createElement('div');
+    card.className = 'planet-card';
+    let btnHtml;
+    if(loc.id === state.currentLocation){
+      btnHtml = `<button class="planet-btn current" disabled>Stationed Here</button>`;
+    } else if(unlocked){
+      btnHtml = `<button class="planet-btn travel" data-travel="${loc.id}">Travel Here</button>`;
+    } else {
+      const canAfford = state.totalOre >= loc.oreReq && state.stardust >= loc.dustCost;
+      btnHtml = `<button class="planet-btn" data-unlock="${loc.id}" ${canAfford ? '' : 'disabled'}>Unlock — ${loc.dustCost} Star Dust</button>`;
+    }
+    card.innerHTML = `
+      <div class="planet-info">
+        <b>${loc.name} ${loc.mult > 1 ? '(x' + loc.mult + ' production)' : ''}</b>
+        <div class="flavor">${loc.flavor}</div>
+        ${!unlocked ? `<div class="req">Requires ${formatNum(loc.oreReq)} lifetime ore + ${loc.dustCost} Star Dust</div>` : ''}
+      </div>
+      ${btnHtml}
+    `;
+    travelContentEl.appendChild(card);
+  });
+
+  travelContentEl.querySelectorAll('[data-travel]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state.currentLocation = btn.dataset.travel;
+      applyTheme(state.currentLocation);
+      flashTravel();
+      renderTravel();
+      render();
+    });
+  });
+  travelContentEl.querySelectorAll('[data-unlock]').forEach(btn=>{
+    btn.addEventListener('click', ()=> unlockLocation(btn.dataset.unlock));
+  });
+}
+
+function render(){
+  oreValEl.textContent = formatNum(state.ore) + ' ore';
+  oreRateEl.textContent = `+${formatNum(oreRate())} ore/sec`;
+  clickStatEl.textContent = `+${formatNum(clickValue())} ore / click`;
+  stardustValSideEl.textContent = formatNum(state.stardust);
+  coresValSideEl.textContent = formatNum(state.universeCores);
+  coresValEl.textContent = formatNum(state.universeCores);
+  universeLevelValEl.textContent = state.universeLevel;
+  locTagEl.textContent = `Location: ${currentLocationObj().name}`;
+
+  const preview = potentialStardust();
+  prestigePreviewEl.innerHTML = `Colonizing now grants <span class="prestige-gain">+${preview} Star Dust</span>`;
+  prestigeBtn.disabled = preview <= 0;
+
+  const uPreview = potentialUniverseCores();
+  universePreviewEl.innerHTML = `Ascending now grants <span class="universe-gain">+${uPreview} Universe Core(s)</span>`;
+  ascendBtn.disabled = uPreview <= 0;
+
+  renderQuickBuy();
+  renderBuildings();
+}
+
+/* ================= ACTIONS ================= */
+function buyBuilding(id){
+  const b = BUILDINGS.find(x=>x.id===id);
+  const cost = costOf(b);
+  if(state.ore < cost) return;
+  state.ore -= cost;
+  state.owned[id]++;
+  render();
+}
+
+function buyMinion(id){
+  const m = MINIONS.find(x=>x.id===id);
+  const owned = state.minions[id]||0;
+  if(owned >= MINION_CAP) return;
+  const cost = minionCost(m);
+  if(state.ore < cost) return;
+  state.ore -= cost;
+  state.minions[id] = owned + 1;
+  render();
+  renderMinions();
+}
+
+function buildShip(){
+  if(state.ore < SHIP_COST) return;
+  state.ore -= SHIP_COST;
+  state.shipBuilt = true;
+  toast('Mining Vessel constructed. Travel routes are now open.', true);
+  render();
+  renderTravel();
+}
+
+function unlockLocation(id){
+  const loc = LOCATIONS.find(l=>l.id===id);
+  if(state.totalOre < loc.oreReq || state.stardust < loc.dustCost) return;
+  state.stardust -= loc.dustCost;
+  state.unlockedLocations.push(id);
+  toast(`${loc.name} unlocked. New structures and minions may now be available.`, true);
+  render();
+  renderTravel();
+}
+
+function mine(){
+  const val = clickValue();
+  state.ore += val;
+  state.totalOre += val;
+  spawnEffects(val);
+  playClickSound();
+  render();
+}
+
+function spawnEffects(val){
+  const btn = document.getElementById('rockBtn');
+  const wrap = document.querySelector('.rock-wrap');
+  const reduce = state.settings.reduceMotion;
+
+  btn.classList.add('pressed');
+  setTimeout(()=> btn.classList.remove('pressed'), 120);
+
+  if(!reduce){
+    const ring = document.createElement('div');
+    ring.className = 'ring';
+    wrap.appendChild(ring);
+    setTimeout(()=> ring.remove(), 600);
+
+    for(let i=0;i<5;i++){
+      const spark = document.createElement('div');
+      spark.className = 'spark';
+      const ang = Math.random()*360;
+      const dist = 40 + Math.random()*40;
+      spark.style.setProperty('--ang', ang + 'deg');
+      spark.style.setProperty('--dist', dist + 'px');
+      wrap.appendChild(spark);
+      setTimeout(()=> spark.remove(), 500);
+    }
+  }
+
+  const pop = document.createElement('div');
+  pop.className = 'pop';
+  pop.textContent = '+' + formatNum(val);
+  const dx = reduce ? '0px' : (Math.random() * 60 - 30) + 'px';
+  pop.style.setProperty('--dx', dx);
+  wrap.appendChild(pop);
+  setTimeout(()=> pop.remove(), 850);
+
+  oreValEl.classList.add('flash');
+  setTimeout(()=> oreValEl.classList.remove('flash'), 200);
+}
+
+function playClickSound(){
+  if(!state.settings.soundOn) return;
+  try{
+    if(!window._audioCtx) window._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = window._audioCtx;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 520;
+    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.12);
+  }catch(e){ /* audio unavailable, ignore */ }
+}
+
+function prestige(){
+  const gain = potentialStardust();
+  if(gain <= 0) return;
+  showModal(
+    'Colonize New System?',
+    `You'll gain +${gain} Star Dust but ore and structures reset. Your ship, planets, and minions stay with you.`,
+    ()=>{
+      state.stardust += gain;
+      state.ore = 0; state.totalOre = 0;
+      state.currentLocation = 'home';
+      applyTheme('home');
+      BUILDINGS.forEach(b => state.owned[b.id] = 0);
+      toast(`Colonized a new system. +${gain} Star Dust banked permanently.`, true);
+      render();
+      save();
+    },
+    { confirmText:'Colonize' }
+  );
+}
+
+function ascend(){
+  const gain = potentialUniverseCores();
+  if(gain <= 0) return;
+  showModal(
+    'Ascend to New Universe?',
+    `You'll gain +${gain} Universe Core(s), each worth +50% to all production forever. Everything resets: ore, Star Dust, structures, minions, planets, and your ship.`,
+    ()=>{
+      state.universeCores += gain;
+      state.universeLevel += 1;
+      state.ore = 0; state.totalOre = 0; state.stardust = 0;
+      state.shipBuilt = false;
+      state.currentLocation = 'home'; state.unlockedLocations = ['home'];
+      BUILDINGS.forEach(b => state.owned[b.id] = 0);
+      MINIONS.forEach(m => state.minions[m.id] = 0);
+      applyTheme('home');
+      toast(`Ascended to Universe ${state.universeLevel}. +${gain} Universe Core(s) banked. Universal-tier gear unlocked.`, true);
+      render();
+      renderTravel();
+      renderMinions();
+      save();
+    },
+    { confirmText:'Ascend' }
+  );
+}
+
+/* ================= LOOP ================= */
+setInterval(()=>{
+  const rate = oreRate();
+  if(rate > 0){
+    state.ore += rate / 10;
+    state.totalOre += rate / 10;
+  }
+  render();
+}, 100);
+setInterval(save, 5000);
+
+/* ================= SAVE/LOAD ================= */
+function save(){
+  try{ localStorage.setItem('driftColonySave', JSON.stringify(state)); }
+  catch(e){ /* storage unavailable — export/import still works */ }
+}
+function load(){
+  try{
+    const raw = localStorage.getItem('driftColonySave');
+    if(raw){
+      const parsed = JSON.parse(raw);
+      state = Object.assign(state, parsed);
+      BUILDINGS.forEach(b => { if(!(b.id in state.owned)) state.owned[b.id] = 0; });
+      MINIONS.forEach(m => { if(!(m.id in state.minions)) state.minions[m.id] = 0; });
+      if(!state.settings) state.settings = { tipsOn:true, soundOn:true, reduceMotion:false };
+      if(typeof state.universeCores !== 'number') state.universeCores = 0;
+      if(typeof state.universeLevel !== 'number') state.universeLevel = 0;
+    }
+  }catch(e){ /* no saved state available */ }
+}
+
+document.getElementById('rockBtn').addEventListener('click', mine);
+document.getElementById('prestigeBtn').addEventListener('click', prestige);
+document.getElementById('ascendBtn').addEventListener('click', ascend);
+
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const area = document.getElementById('saveArea');
+  area.value = btoa(JSON.stringify(state));
+  area.classList.add('show');
+  area.select();
+});
+document.getElementById('importBtn').addEventListener('click', ()=>{
+  const area = document.getElementById('saveArea');
+  if(!area.classList.contains('show')){
+    area.classList.add('show'); area.value = ''; area.focus(); return;
+  }
+  try{
+    const parsed = JSON.parse(atob(area.value.trim()));
+    state = Object.assign(state, parsed);
+    applyTheme(state.currentLocation);
+    render();
+    toast('Save imported successfully.');
+  }catch(e){
+    showModal('Import Failed', 'Could not read that save code. Double-check you copied the whole string.', null, { singleButton:true, confirmText:'OK' });
+  }
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  showModal(
+    'Reset Everything?',
+    'This will erase Star Dust, Universe Cores, unlocked planets, minions, and all structures. This cannot be undone.',
+    ()=>{
+      state = {
+        ore:0, totalOre:0, stardust:0, universeCores:0, universeLevel:0,
+        shipBuilt:false, currentLocation:'home', unlockedLocations:['home'],
+        owned:{}, minions:{}, settings: state.settings
+      };
+      BUILDINGS.forEach(b => state.owned[b.id] = 0);
+      MINIONS.forEach(m => state.minions[m.id] = 0);
+      applyTheme('home');
+      try{ localStorage.removeItem('driftColonySave'); }catch(e){}
+      render();
+      toast('Save reset.');
+    },
+    { confirmText:'Reset' }
+  );
+});
+
+/* settings toggles */
+function setToggle(btn, on){
+  btn.textContent = on ? 'ON' : 'OFF';
+  btn.classList.toggle('on', on);
+}
+const toggleTipsBtn = document.getElementById('toggleTips');
+const toggleSoundBtn = document.getElementById('toggleSound');
+const toggleMotionBtn = document.getElementById('toggleMotion');
+
+toggleTipsBtn.addEventListener('click', ()=>{
+  state.settings.tipsOn = !state.settings.tipsOn;
+  setToggle(toggleTipsBtn, state.settings.tipsOn);
+});
+toggleSoundBtn.addEventListener('click', ()=>{
+  state.settings.soundOn = !state.settings.soundOn;
+  setToggle(toggleSoundBtn, state.settings.soundOn);
+});
+toggleMotionBtn.addEventListener('click', ()=>{
+  state.settings.reduceMotion = !state.settings.reduceMotion;
+  document.body.classList.toggle('reduce-motion', state.settings.reduceMotion);
+  setToggle(toggleMotionBtn, state.settings.reduceMotion);
+});
+
+load();
+applyTheme(state.currentLocation);
+setToggle(toggleTipsBtn, state.settings.tipsOn);
+setToggle(toggleSoundBtn, state.settings.soundOn);
+setToggle(toggleMotionBtn, state.settings.reduceMotion);
+document.body.classList.toggle('reduce-motion', state.settings.reduceMotion);
+render();
 </script>
 
 </body>
