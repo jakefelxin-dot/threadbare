@@ -2,1177 +2,2572 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Drift Colony</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fieldstone — Shop Independent Makers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+  :root{
+    --bg:#F6F7F9;
+    --surface:#FFFFFF;
+    --ink:#12131A;
+    --muted:#6B6F7B;
+    --faint:#9599A3;
+    --line:#E7E9ED;
+    --accent:#2E4CFF;
+    --accent-ink:#1A2FCC;
+    --accent-soft:#EDF0FF;
+    --coral:#FF5A3C;
+    --green:#1B8A5A;
+    --green-soft:#E8F5EE;
+    --gold:#F5A623;
+    --radius-lg:16px;
+    --radius-md:12px;
+    --radius-sm:8px;
+    --shadow:0 1px 2px rgba(18,19,26,0.04), 0 8px 24px -12px rgba(18,19,26,0.10);
+    --shadow-hover:0 4px 10px rgba(18,19,26,0.06), 0 16px 32px -12px rgba(18,19,26,0.16);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    font-size:15px;
+  }
+  button, input, select, textarea{font-family:inherit;}
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-thumb{background:#D6D9DF; border-radius:10px;}
 
-:root{
-  --bg:#0a0f16;
-  --surface:#121a24;
-  --surface-2:#1a2530;
-  --line:#26333f;
-  --cyan:#4fd8e0;
-  --amber:#ffb454;
-  --violet:#b48cff;
-  --text:#e8eef2;
-  --muted:#6f8291;
-  --green:#7fe0a0;
-  --sbw:190px;
-}
-*{box-sizing:border-box;}
-body{
-  margin:0;
-  background:
-    radial-gradient(circle at 15% 10%, rgba(79,216,224,0.06), transparent 40%),
-    radial-gradient(circle at 85% 80%, rgba(180,140,255,0.05), transparent 40%),
-    var(--bg);
-  color:var(--text);
-  font-family:'JetBrains Mono',monospace;
-  min-height:100vh;
-  position:relative;
-  transition:background .4s ease;
-}
+  @keyframes fadeInUp{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+  @keyframes mascotFloat{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-9px);} }
 
-/* theme overrides — swapping --cyan/--amber recolors most of the UI */
-body.theme-rusthollow{ --cyan:#ff8c42; --amber:#ffce54; }
-body.theme-glacier{ --cyan:#7fd8ff; --amber:#eafcff; }
-body.theme-embercore{ --cyan:#ff5c39; --amber:#ffb454; }
+  /* ===== Top bar ===== */
+  .topbar{
+    position:sticky; top:0; z-index:50;
+    background:var(--surface);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{
+    max-width:1440px; margin:0 auto;
+    display:flex; align-items:center; gap:20px;
+    padding:14px 28px;
+  }
+  .logo{
+    display:flex; align-items:center; gap:9px;
+    font-weight:800; font-size:18px; letter-spacing:-0.02em;
+    flex-shrink:0; cursor:pointer; border:none; background:none; color:var(--ink);
+  }
+  .logo .mark{
+    width:26px; height:26px; border-radius:8px;
+    background:linear-gradient(135deg, var(--accent), #7C5CFF);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:14px; font-weight:800;
+  }
+  .search-wrap{
+    flex:1; max-width:640px;
+    position:relative;
+  }
+  .search-wrap svg{
+    position:absolute; left:15px; top:50%; transform:translateY(-50%);
+    color:var(--faint); pointer-events:none;
+  }
+  .search-wrap input{
+    width:100%;
+    border:1.5px solid var(--line);
+    background:var(--bg);
+    border-radius:999px;
+    padding:11px 40px 11px 42px;
+    font-size:14px;
+    color:var(--ink);
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .search-wrap input:focus{border-color:var(--accent); background:var(--surface); outline:none;}
+  .search-wrap input::placeholder{color:var(--faint);}
+  .search-clear{
+    position:absolute; right:8px; top:50%; transform:translateY(-50%);
+    width:26px; height:26px; border-radius:999px; border:none;
+    background:var(--line); color:var(--muted); cursor:pointer;
+    display:none; align-items:center; justify-content:center; font-size:14px; line-height:1;
+  }
+  .search-clear.show{display:flex;}
+  .search-clear:hover{background:#D6D9DF; color:var(--ink);}
 
-/* starfield texture */
-body::before{
-  content:''; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:0.5;
-  background-image:
-    radial-gradient(1px 1px at 8% 12%, #fff, transparent),
-    radial-gradient(1px 1px at 22% 68%, #fff, transparent),
-    radial-gradient(1px 1px at 35% 30%, #fff, transparent),
-    radial-gradient(1px 1px at 48% 82%, #fff, transparent),
-    radial-gradient(1px 1px at 61% 18%, #fff, transparent),
-    radial-gradient(1px 1px at 74% 55%, #fff, transparent),
-    radial-gradient(1px 1px at 85% 8%, #fff, transparent),
-    radial-gradient(1px 1px at 92% 72%, #fff, transparent),
-    radial-gradient(1px 1px at 15% 90%, #fff, transparent),
-    radial-gradient(1px 1px at 55% 45%, #fff, transparent);
-  animation:starDrift 60s linear infinite;
-}
-@keyframes starDrift{ from{ background-position:0 0; } to{ background-position:-200px 200px; } }
-body.reduce-motion::before{ animation:none; }
+  .topbar-actions{display:flex; align-items:center; gap:10px; flex-shrink:0;}
+  .icon-btn{
+    width:40px; height:40px;
+    border-radius:999px;
+    border:1.5px solid var(--line);
+    background:var(--surface);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--ink);
+    position:relative;
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .icon-btn:hover{border-color:var(--ink); transform:translateY(-1px);}
+  .icon-btn.fav-active{color:var(--coral); border-color:var(--coral);}
+  .cart-badge{
+    position:absolute; top:-5px; right:-5px;
+    background:var(--coral); color:#fff;
+    font-size:10px; font-weight:700;
+    min-width:18px; height:18px; border-radius:999px;
+    display:flex; align-items:center; justify-content:center;
+    padding:0 4px;
+  }
+  .sell-btn{
+    background:var(--ink); color:#fff;
+    border:none; padding:10px 18px;
+    border-radius:999px; font-weight:600; font-size:13.5px;
+    cursor:pointer; white-space:nowrap; transition:background .15s ease;
+  }
+  .sell-btn:hover{background:#2b2d38;}
 
-/* scanline texture */
-body::after{
-  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-  background:repeating-linear-gradient(to bottom, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px);
-  opacity:0.4;
-}
+  /* ===== Layout ===== */
+  .layout{
+    max-width:1440px; margin:0 auto;
+    display:flex; align-items:flex-start;
+    gap:32px;
+    padding:28px;
+  }
 
-/* travel flash */
-.travel-flash{
-  position:fixed; inset:0; background:var(--cyan); opacity:0; pointer-events:none;
-  z-index:40; transition:opacity 0.5s ease;
-}
-.travel-flash.show{ opacity:0.22; transition:opacity 0.08s ease; }
+  /* ===== Sidebar ===== */
+  .sidebar{
+    width:264px; flex-shrink:0;
+    position:sticky; top:82px;
+    display:flex; flex-direction:column; gap:26px;
+  }
+  .sidebar-mobile-head{display:none;}
 
-.shell{
-  max-width:1080px; margin:0 auto; min-height:100vh;
-  display:flex; position:relative; z-index:1;
-}
-@media (max-width:760px){ .shell{ flex-direction:column; } }
+  .sb-section-title{
+    font-size:11.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.07em; color:var(--faint);
+    margin-bottom:12px;
+  }
+  .cat-list{list-style:none; display:flex; flex-direction:column; gap:3px;}
+  .cat-item{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 10px 8px 8px;
+    border-radius:var(--radius-md);
+    font-size:14px; font-weight:500;
+    cursor:pointer; color:var(--ink);
+    border:none; background:none; width:100%; text-align:left;
+    transition:background .18s ease, color .18s ease, transform .12s ease;
+  }
+  .cat-item:hover{background:var(--bg);}
+  .cat-item:active{transform:scale(0.98);}
+  .cat-item.active{background:var(--accent-soft); color:var(--accent-ink); font-weight:700;}
+  .cat-left{display:flex; align-items:center; gap:11px;}
+  .cat-icon{
+    width:30px; height:30px; border-radius:9px;
+    background:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    font-size:14.5px; flex-shrink:0;
+    transition:background .18s ease, transform .18s ease;
+  }
+  .cat-item.active .cat-icon{background:var(--surface); box-shadow:0 1px 3px rgba(18,19,26,0.08); transform:scale(1.06);}
+  .cat-item .count{font-size:12px; color:var(--faint); font-weight:600; transition:color .18s ease;}
+  .cat-item.active .count{color:var(--accent);}
 
-/* ---------- sidebar ---------- */
-.sidebar{
-  width:var(--sbw); flex-shrink:0;
-  border-right:1px solid var(--line);
-  padding:16px 12px;
-  display:flex; flex-direction:column; gap:4px;
-  transition:width .25s ease;
-  overflow:hidden;
-}
-.sidebar.collapsed{ width:56px; }
-@media (max-width:760px){
-  .sidebar{ width:100% !important; border-right:none; border-bottom:1px solid var(--line);
-    flex-direction:row; overflow-x:auto; padding:12px; }
-}
+  .price-slider{padding:2px 2px 0;}
+  .price-slider input[type=range]{
+    width:100%; accent-color:var(--accent); cursor:pointer;
+  }
+  .price-labels{
+    display:flex; justify-content:space-between;
+    font-size:12.5px; color:var(--muted); margin-top:6px; font-weight:500;
+  }
 
-.sidebar-top{ display:flex; align-items:center; gap:8px; margin-bottom:14px; }
-.collapse-btn{
-  background:var(--surface-2); border:1px solid var(--line); color:var(--muted);
-  width:28px; height:28px; flex-shrink:0; cursor:pointer; font-size:13px;
-}
-.collapse-btn:hover{ color:var(--text); border-color:var(--cyan); }
-.brand{
-  font-family:'Orbitron',sans-serif; font-weight:800; font-size:16px; letter-spacing:0.5px;
-  white-space:nowrap; overflow:hidden;
-}
-.brand span{ color:var(--cyan); }
-.sidebar.collapsed .brand{ display:none; }
-@media (max-width:760px){ .sidebar-top{ display:none; } }
+  .check-row{
+    display:flex; align-items:center; gap:9px;
+    font-size:14px; color:var(--muted); font-weight:500;
+    padding:6px 2px; cursor:pointer;
+  }
+  .check-row input{width:16px; height:16px; accent-color:var(--accent); cursor:pointer;}
 
-.navbtn{
-  font-family:'Orbitron',sans-serif; font-size:11px; letter-spacing:1px;
-  text-transform:uppercase; text-align:left;
-  background:none; border:1px solid transparent; color:var(--muted);
-  padding:10px 10px; cursor:pointer; white-space:nowrap;
-  transition:color .12s ease, background .12s ease;
-  display:flex; align-items:center; gap:8px;
-}
-.navbtn:hover{ color:var(--text); }
-.navbtn.active{ background:var(--surface); border-color:var(--line); color:var(--cyan); }
-.sidebar.collapsed .navbtn{ justify-content:center; padding:10px 4px; }
-.sidebar.collapsed .nav-label{ display:none; }
+  /* ===== Rating filter ===== */
+  .rating-stars{display:flex; gap:5px; margin-bottom:7px;}
+  .star-btn{
+    background:none; border:none; font-size:23px; line-height:1;
+    color:var(--line); cursor:pointer; padding:0;
+    transition:color .15s ease, transform .15s ease;
+  }
+  .star-btn:hover{transform:scale(1.18);}
+  .star-btn.active{color:var(--gold);}
+  .rating-label{font-size:12px; color:var(--muted); font-weight:600;}
 
-.side-readout{
-  margin-top:auto; padding-top:14px; border-top:1px solid var(--line);
-  font-size:10px; color:var(--muted); line-height:1.7;
-}
-.sidebar.collapsed .side-readout{ display:none; }
-@media (max-width:760px){ .side-readout{ display:none; } }
-.side-readout b{ color:var(--amber); display:block; font-family:'Orbitron',sans-serif; font-size:13px;}
+  .clear-filters{
+    font-size:13px; font-weight:600; color:var(--accent);
+    background:none; border:none; cursor:pointer; padding:0;
+    text-align:left;
+  }
+  .clear-filters:hover{text-decoration:underline;}
 
-/* ---------- main ---------- */
-.main{ padding:24px 22px 70px; position:relative; flex:1; min-width:0; }
+  /* mobile filter toggle */
+  .filter-toggle{display:none;}
 
-.panel{ display:none; }
-.panel.active{ display:block; animation:panelIn 0.28s ease; }
-@keyframes panelIn{ from{ opacity:0; transform:translateY(8px);} to{ opacity:1; transform:translateY(0);} }
-body.reduce-motion .panel.active{ animation:none; }
+  /* ===== Preference / membership cards ===== */
+  .pref-card{background:var(--accent-soft); border-radius:var(--radius-md); padding:15px;}
+  .pref-card h4{font-size:13.5px; font-weight:700; color:var(--accent-ink); margin-bottom:5px;}
+  .pref-card p{font-size:12px; color:var(--muted); margin-bottom:12px; line-height:1.45;}
+  .pref-card.member{background:var(--green-soft);}
+  .pref-card.member h4{color:var(--green);}
+  .take-quiz-btn{
+    background:var(--accent); color:#fff; border:none; padding:9px 15px;
+    border-radius:999px; font-weight:700; font-size:12.5px; cursor:pointer; width:100%;
+    transition:background .15s ease;
+  }
+  .take-quiz-btn:hover{background:var(--accent-ink);}
+  .pref-chips{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px;}
+  .pref-chip-mini{
+    font-size:11px; font-weight:600; background:var(--surface); color:var(--accent-ink);
+    padding:4px 10px; border-radius:999px;
+  }
+  .pref-edit-row{display:flex; gap:14px;}
+  .pref-edit-row button{
+    font-size:12px; font-weight:700; background:none; border:none;
+    color:var(--accent-ink); cursor:pointer; padding:0;
+  }
+  .pref-edit-row button:last-child{color:var(--muted);}
+  .pref-edit-row button:hover{text-decoration:underline;}
 
-.panel h2{
-  font-family:'Orbitron',sans-serif; font-size:15px; letter-spacing:1.5px;
-  text-transform:uppercase; color:var(--text); margin:0 0 4px;
-}
-.panel .sub{ font-size:11px; color:var(--muted); margin-bottom:18px;}
+  /* ===== Main content ===== */
+  .content{flex:1; min-width:0;}
 
-/* mine panel */
-.console{ text-align:center; background:var(--surface); border:1px solid var(--line); padding:22px 18px; }
-.ore-readout{
-  font-family:'Orbitron',sans-serif; font-size:clamp(26px,5.5vw,38px);
-  color:var(--amber); margin-bottom:2px; word-break:break-all;
-  transition:text-shadow .15s ease;
-}
-.ore-readout.flash{ text-shadow:0 0 14px rgba(255,180,84,0.7); }
-.ore-rate{ font-size:12px; color:var(--muted); margin-bottom:6px;}
-.loc-tag{ font-size:11px; color:var(--cyan); margin-bottom:18px;}
+  .breadcrumb{
+    display:flex; align-items:center; gap:6px;
+    font-size:12.5px; color:var(--faint); font-weight:600; margin-bottom:14px;
+  }
+  .breadcrumb button{background:none; border:none; color:var(--accent); cursor:pointer; font-weight:600; font-size:12.5px; padding:0;}
+  .breadcrumb button:hover{text-decoration:underline;}
 
-.rock-wrap{ position:relative; display:flex; justify-content:center; margin-bottom:16px; height:220px; align-items:center;}
+  /* ===== Shop panel (turns into a "shelf box" when a category is active) ===== */
+  .shop-panel{
+    border:1px solid transparent;
+    border-radius:var(--radius-lg);
+    transition:background .22s ease, border-color .22s ease, box-shadow .22s ease, padding .22s ease;
+  }
+  .shop-panel.boxed{
+    background:var(--surface);
+    border-color:var(--line);
+    padding:22px 22px 26px;
+    box-shadow:var(--shadow);
+  }
+  .shelf-ribbon{
+    align-items:center; gap:14px;
+    padding-bottom:18px; margin-bottom:18px; border-bottom:1px solid var(--line);
+    animation:fadeInUp .3s ease both;
+  }
+  .shelf-ribbon .icon{
+    width:48px; height:48px; border-radius:14px; background:var(--accent-soft);
+    display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;
+  }
+  .shelf-ribbon h2{font-size:19px; font-weight:800; letter-spacing:-0.01em;}
+  .shelf-ribbon p{font-size:12.5px; color:var(--muted); margin-top:2px;}
 
-.planet-ring{
-  position:absolute; top:50%; left:50%; width:230px; height:74px;
-  border:3px solid var(--cyan); border-radius:50%; opacity:0.32;
-  transform:translate(-50%,-50%) rotate(-15deg); z-index:1; pointer-events:none;
-  transition:border-color .4s ease;
-}
+  .content-head{
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:12px;
+    margin-bottom:20px;
+  }
+  .content-head h1{
+    font-size:22px; font-weight:800; letter-spacing:-0.02em;
+  }
+  .content-head .sub{font-size:13.5px; color:var(--muted); font-weight:500; margin-top:2px;}
 
-#rockBtn{
-  width:160px; height:160px; border-radius:50%;
-  background:radial-gradient(circle at 32% 28%, #4a5866, #14191f 68%);
-  border:3px solid var(--cyan);
-  box-shadow:0 0 24px rgba(79,216,224,0.25), inset 0 0 30px rgba(0,0,0,0.5);
-  cursor:pointer; color:var(--cyan); position:relative; z-index:2; overflow:hidden;
-  font-family:'Orbitron',sans-serif; font-size:12px; letter-spacing:1px;
-  display:flex; align-items:center; justify-content:center;
-  transition:transform .12s cubic-bezier(.34,1.56,.64,1), border-color .4s ease;
-  user-select:none;
-  animation:breathe 2.6s ease-in-out infinite;
-}
-#rockBtn::before{
-  content:''; position:absolute; inset:0; border-radius:50%;
-  background:conic-gradient(from 0deg, rgba(255,255,255,0.06), transparent 25%, rgba(255,255,255,0.09), transparent 55%, rgba(255,255,255,0.04), transparent 85%);
-  animation:swirl 16s linear infinite;
-}
-#rockBtn::after{
-  content:''; position:absolute; inset:0; border-radius:50%;
-  background:radial-gradient(circle at 70% 75%, rgba(0,0,0,0.55), transparent 55%);
-}
-@keyframes swirl{ from{ transform:rotate(0deg);} to{ transform:rotate(360deg);} }
-body.reduce-motion #rockBtn::before{ animation:none; }
-body.reduce-motion #rockBtn{ animation:none; }
-@keyframes breathe{
-  0%,100%{ box-shadow:0 0 24px rgba(79,216,224,0.25), inset 0 0 30px rgba(0,0,0,0.5); }
-  50%{ box-shadow:0 0 38px rgba(79,216,224,0.42), inset 0 0 30px rgba(0,0,0,0.5); }
-}
-#rockBtn.pressed{ transform:scale(0.9); box-shadow:0 0 46px rgba(79,216,224,0.6), inset 0 0 30px rgba(0,0,0,0.5);}
+  .sort-wrap{position:relative;}
+  .sort-wrap select{
+    appearance:none;
+    border:1.5px solid var(--line);
+    background:var(--surface);
+    border-radius:var(--radius-sm);
+    padding:9px 34px 9px 14px;
+    font-size:13.5px; font-weight:600; color:var(--ink);
+    cursor:pointer;
+  }
+  .sort-wrap::after{
+    content:"";
+    position:absolute; right:13px; top:50%;
+    width:7px; height:7px;
+    border-right:1.6px solid var(--muted); border-bottom:1.6px solid var(--muted);
+    transform:translateY(-65%) rotate(45deg);
+    pointer-events:none;
+  }
 
-.ring{
-  position:absolute; border:2px solid var(--cyan); border-radius:50%;
-  width:160px; height:160px; opacity:0.6; pointer-events:none;
-  animation:ringPulse 0.55s ease-out forwards;
-}
-@keyframes ringPulse{ 0%{ transform:scale(1); opacity:0.55;} 100%{ transform:scale(1.65); opacity:0;} }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:18px;
+  }
+  @media (max-width:1180px){ .grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:620px){ .grid{grid-template-columns:1fr;} }
 
-.spark{
-  position:absolute; top:50%; left:50%; width:4px; height:4px; border-radius:50%;
-  background:var(--amber); pointer-events:none;
-  transform:translate(-50%,-50%) rotate(var(--ang)) translateX(0);
-  animation:sparkFly 0.5s ease-out forwards;
-}
-@keyframes sparkFly{
-  0%{ opacity:1; transform:translate(-50%,-50%) rotate(var(--ang)) translateX(0); }
-  100%{ opacity:0; transform:translate(-50%,-50%) rotate(var(--ang)) translateX(var(--dist)); }
-}
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    overflow:hidden;
+    display:flex; flex-direction:column;
+    box-shadow:var(--shadow);
+    transition:transform .15s ease, box-shadow .15s ease;
+    cursor:pointer;
+    animation:fadeInUp .35s ease both;
+  }
+  .card:hover{transform:translateY(-3px); box-shadow:var(--shadow-hover);}
 
-.pop{
-  position:absolute; pointer-events:none;
-  font-family:'JetBrains Mono',monospace; font-weight:700;
-  color:var(--amber); font-size:14px; top:50%; left:50%;
-  animation:floatUp 0.85s cubic-bezier(.2,.7,.3,1) forwards;
-}
-@keyframes floatUp{
-  0%{ opacity:1; transform:translate(-50%,-50%) translateY(0) scale(1);}
-  100%{ opacity:0; transform:translate(-50%,-50%) translateY(-70px) translateX(var(--dx)) scale(1.1);}
-}
+  .card-media{
+    height:180px; position:relative;
+  }
+  .card-media .swatch{width:100%; height:100%; background-size:cover; background-position:center;}
+  .badge-stack{
+    position:absolute; top:10px; left:10px;
+    display:flex; flex-direction:column; gap:6px; align-items:flex-start;
+  }
+  .badge{
+    font-size:10.5px; font-weight:700; padding:4px 9px; border-radius:999px;
+    text-transform:uppercase; letter-spacing:0.03em;
+  }
+  .badge.low{background:#FFF1E8; color:#B45309;}
+  .badge.out{background:#F1F2F4; color:var(--muted);}
+  .badge.mine{background:var(--ink); color:#fff;}
+  .badge.locked{background:var(--accent-ink); color:#fff;}
+  .fav-btn{
+    position:absolute; top:10px; right:10px;
+    width:32px; height:32px; border-radius:999px;
+    background:rgba(255,255,255,0.92); border:none;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--ink); backdrop-filter:blur(4px);
+    transition:transform .15s ease;
+  }
+  .fav-btn:hover{transform:scale(1.1);}
+  .fav-btn.active{color:var(--coral);}
+  .quick-add{
+    position:absolute; bottom:10px; left:10px; right:10px;
+    background:var(--ink); color:#fff;
+    border:none; padding:10px; border-radius:var(--radius-sm);
+    font-weight:600; font-size:13px; cursor:pointer;
+    opacity:0; transform:translateY(6px);
+    transition:all .15s ease;
+  }
+  .card:hover .quick-add{opacity:1; transform:translateY(0);}
+  .quick-add.added{background:var(--green);}
 
-.click-stat{ font-size:12px; color:var(--muted); margin-bottom:16px;}
+  .card-body{padding:14px 15px 16px; display:flex; flex-direction:column; gap:4px;}
+  .maker{font-size:11.5px; font-weight:600; color:var(--accent); text-transform:uppercase; letter-spacing:0.04em;}
+  .card-body h3{font-size:15px; font-weight:700; letter-spacing:-0.01em; line-height:1.3;}
+  .card-body .desc{font-size:12.5px; color:var(--muted); line-height:1.4; min-height:32px;}
+  .card-foot{display:flex; align-items:center; justify-content:space-between; margin-top:6px;}
+  .price{font-size:16px; font-weight:800;}
+  .rating{display:flex; align-items:center; gap:4px; font-size:12px; color:var(--muted); font-weight:600;}
 
-.quickbuy{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
-.quickbuy button{
-  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700;
-  background:var(--surface-2); border:1px solid var(--line); color:var(--text);
-  padding:8px 12px; cursor:pointer; transition:transform .1s ease, border-color .1s ease;
-}
-.quickbuy button:hover:not(:disabled){ border-color:var(--cyan); color:var(--cyan); transform:translateY(-1px);}
-.quickbuy button:disabled{ opacity:0.35; cursor:not-allowed;}
+  .empty-state{
+    padding:80px 20px; text-align:center;
+    color:var(--muted); font-size:14px;
+    background:var(--surface); border:1px dashed var(--line); border-radius:var(--radius-lg);
+    animation:fadeIn .25s ease;
+  }
+  .shop-panel.boxed .empty-state{border:1px dashed var(--line); background:var(--bg);}
+  .empty-state strong{display:block; font-size:16px; color:var(--ink); margin-bottom:6px;}
+  .empty-cta{
+    display:none; margin:16px auto 0; background:var(--ink); color:#fff; border:none;
+    padding:10px 20px; border-radius:999px; font-weight:700; font-size:13px; cursor:pointer;
+  }
+  .empty-cta:hover{background:#2b2d38;}
 
-/* structures / minions panels */
-.section-label{
-  font-family:'Orbitron',sans-serif; font-size:11px; letter-spacing:1px;
-  color:var(--muted); margin:18px 0 8px; text-transform:uppercase;
-}
-.buy-row{
-  display:flex; justify-content:space-between; align-items:center;
-  gap:10px; padding:12px 14px; border:1px solid var(--line);
-  background:var(--surface); margin-bottom:8px;
-  transition:border-color .15s ease, transform .15s ease;
-}
-.buy-row:hover{ border-color:#334252; transform:translateY(-1px); }
-.buy-row.devourer{ border-color:var(--violet); }
-.buy-info b{ display:block; font-family:'Orbitron',sans-serif; font-size:13px; color:var(--text);}
-.buy-info .desc{ font-size:11px; color:var(--muted); margin-top:2px;}
-.buy-info .owned{ font-size:11px; color:var(--cyan); margin-top:2px;}
-.buy-btn{
-  font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px;
-  background:var(--surface-2); border:1px solid var(--line); color:var(--text);
-  padding:9px 12px; cursor:pointer; white-space:nowrap; min-width:92px;
-  transition:border-color .1s ease, color .1s ease;
-}
-.buy-btn:hover:not(:disabled){ border-color:var(--cyan); color:var(--cyan);}
-.buy-btn:disabled{ opacity:0.35; cursor:not-allowed;}
+  /* ===== Horizontal strips (recently viewed / picked for you) ===== */
+  .strip-section{margin-top:36px;}
+  .foryou-section{margin-bottom:28px;}
+  .strip-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .strip-head .sb-section-title{margin-bottom:0;}
+  .strip-head button{
+    font-size:12px; font-weight:700; color:var(--accent); background:none; border:none; cursor:pointer;
+  }
+  .strip-head button:hover{text-decoration:underline;}
+  .h-strip{display:flex; gap:14px; overflow-x:auto; padding-bottom:6px;}
+  .strip-card{
+    flex-shrink:0; width:150px; cursor:pointer;
+    border:1px solid var(--line); border-radius:var(--radius-md); overflow:hidden;
+    background:var(--surface); transition:box-shadow .15s ease, transform .15s ease;
+  }
+  .strip-card:hover{box-shadow:var(--shadow-hover); transform:translateY(-2px);}
+  .strip-card .swatch{height:90px; background-size:cover; background-position:center;}
+  .strip-card .sc-body{padding:9px 10px;}
+  .strip-card h4{font-size:12.5px; font-weight:700; line-height:1.3;}
+  .strip-card .price{font-size:12.5px; font-weight:800; margin-top:3px; display:block;}
 
-/* travel panel */
-.ship-gate{ background:var(--surface); border:1px solid var(--line); padding:20px; text-align:center; }
-.ship-gate p{ font-size:12px; color:var(--muted); line-height:1.7; max-width:440px; margin:0 auto 16px;}
-.build-btn{
-  font-family:'Orbitron',sans-serif; font-weight:700; font-size:13px;
-  background:var(--cyan); border:1px solid var(--cyan); color:#0a0f16;
-  padding:11px 20px; cursor:pointer;
-}
-.build-btn:hover:not(:disabled){ background:transparent; color:var(--cyan);}
-.build-btn:disabled{ opacity:0.3; cursor:not-allowed;}
+  /* ===== Overlay (shared) ===== */
+  .overlay{
+    position:fixed; inset:0; background:rgba(18,19,26,0.45);
+    opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:80;
+  }
+  .overlay.open{opacity:1; pointer-events:auto;}
 
-.planet-card{
-  background:var(--surface); border:1px solid var(--line); padding:16px; margin-bottom:12px;
-  display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; align-items:center;
-  transition:border-color .15s ease;
-}
-.planet-card:hover{ border-color:#334252; }
-.planet-info b{ font-family:'Orbitron',sans-serif; font-size:14px; display:block; color:var(--text);}
-.planet-info .flavor{ font-size:11px; color:var(--muted); margin:4px 0 6px; max-width:360px;}
-.planet-info .req{ font-size:10px; color:var(--violet);}
-.planet-btn{
-  font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px;
-  padding:10px 14px; cursor:pointer; white-space:nowrap;
-  background:var(--surface-2); border:1px solid var(--line); color:var(--text);
-}
-.planet-btn.current{ border-color:var(--green); color:var(--green); cursor:default; }
-.planet-btn.travel{ border-color:var(--cyan); color:var(--cyan); }
-.planet-btn:disabled{ opacity:0.35; cursor:not-allowed;}
+  /* ===== Cart drawer ===== */
+  .drawer{
+    position:fixed; top:0; right:0; bottom:0; width:min(420px, 94vw);
+    background:var(--surface); z-index:90;
+    transform:translateX(100%); transition:transform .25s cubic-bezier(.4,0,.2,1);
+    display:flex; flex-direction:column;
+    box-shadow:-16px 0 40px rgba(0,0,0,0.12);
+  }
+  .drawer.open{transform:translateX(0);}
+  .drawer-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px 22px; border-bottom:1px solid var(--line);
+  }
+  .drawer-head h2{font-size:18px; font-weight:800; letter-spacing:-0.01em;}
+  .close-btn{
+    width:34px; height:34px; border-radius:999px; border:none; background:var(--bg);
+    font-size:18px; cursor:pointer; color:var(--ink); transition:background .15s ease, transform .15s ease;
+    flex-shrink:0;
+  }
+  .close-btn:hover{background:var(--line); transform:rotate(90deg);}
 
-/* prestige / universe panel */
-.prestige-box{ background:var(--surface); border:1px solid var(--line); padding:20px;}
-.prestige-box p{ font-size:12px; color:var(--muted); line-height:1.7; margin:0 0 14px;}
-.prestige-gain{ color:var(--violet); font-weight:700;}
-.prestige-btn{
-  font-family:'Orbitron',sans-serif; font-weight:700; font-size:13px;
-  background:var(--violet); border:1px solid var(--violet); color:#0a0f16;
-  padding:11px 18px; cursor:pointer; width:100%; letter-spacing:0.5px;
-}
-.prestige-btn:hover:not(:disabled){ background:transparent; color:var(--violet);}
-.prestige-btn:disabled{ opacity:0.3; cursor:not-allowed;}
-.universe-gain{ color:#ff9ce0; font-weight:700; }
-.universe-btn{
-  font-family:'Orbitron',sans-serif; font-weight:700; font-size:13px;
-  background:#ff9ce0; border:1px solid #ff9ce0; color:#0a0f16;
-  padding:11px 18px; cursor:pointer; width:100%; letter-spacing:0.5px;
-}
-.universe-btn:hover:not(:disabled){ background:transparent; color:#ff9ce0; }
-.universe-btn:disabled{ opacity:0.3; cursor:not-allowed;}
-.universe-stats{ display:flex; gap:24px; margin-bottom:16px; }
-.universe-stats div b{ display:block; font-family:'Orbitron',sans-serif; font-size:22px; color:#ff9ce0; }
-.universe-stats div span{ font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .ship-progress{padding:14px 22px 0;}
+  .ship-progress .msg{font-size:12.5px; font-weight:600; color:var(--ink); margin-bottom:8px;}
+  .ship-progress .msg strong{color:var(--green);}
+  .ship-bar{height:6px; border-radius:999px; background:var(--line); overflow:hidden;}
+  .ship-bar-fill{height:100%; background:var(--green); border-radius:999px; transition:width .3s ease;}
 
-/* settings panel */
-.settings-box{ background:var(--surface); border:1px solid var(--line); padding:20px; }
-.setting-row{ display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); }
-.setting-row:last-child{ border-bottom:none; }
-.setting-row .label{ font-size:12px; color:var(--text); }
-.setting-row .hint{ font-size:10px; color:var(--muted); margin-top:2px;}
-.toggle-btn{
-  font-family:'JetBrains Mono',monospace; font-weight:700; font-size:11px;
-  background:var(--surface-2); border:1px solid var(--line); color:var(--muted);
-  padding:7px 14px; cursor:pointer; min-width:64px;
-}
-.toggle-btn.on{ color:var(--green); border-color:var(--green); }
+  .drawer-items{flex:1; overflow-y:auto; padding:6px 22px;}
+  .drawer-item{
+    display:flex; gap:12px; align-items:flex-start;
+    padding:16px 0; border-bottom:1px solid var(--line);
+  }
+  .drawer-item .swatch{width:58px; height:58px; border-radius:var(--radius-sm); flex-shrink:0; background-size:cover; background-position:center;}
+  .di-info{flex:1;}
+  .di-info h4{font-size:14px; font-weight:700; cursor:pointer;}
+  .di-info h4:hover{color:var(--accent);}
+  .di-info .maker{font-size:10.5px;}
+  .qty-row{display:flex; align-items:center; gap:10px; margin-top:8px;}
+  .qty-row button{
+    width:24px; height:24px; border:1px solid var(--line); background:var(--bg);
+    border-radius:999px; cursor:pointer; font-size:14px; font-weight:600;
+    display:flex; align-items:center; justify-content:center; color:var(--ink);
+  }
+  .qty-row span{font-size:13px; font-weight:700; min-width:14px; text-align:center;}
+  .di-price{font-size:14px; font-weight:800; white-space:nowrap;}
+  .remove-link{
+    font-size:11.5px; color:var(--coral); background:none; border:none;
+    cursor:pointer; padding:0; margin-top:8px; font-weight:600;
+  }
+  .drawer-empty{padding:60px 0; text-align:center; color:var(--muted); font-size:14px;}
+  .drawer-foot{border-top:1px solid var(--line); padding:18px 22px 22px;}
 
-.save-panel{ margin-top:18px;}
-.save-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
-.save-actions button{
-  font-family:'JetBrains Mono',monospace; font-size:11px;
-  background:var(--surface-2); border:1px solid var(--line); color:var(--muted);
-  padding:7px 10px; cursor:pointer;
-}
-.save-actions button:hover{ color:var(--text); border-color:var(--cyan);}
-textarea{
-  width:100%; height:64px; background:var(--surface-2); color:var(--text);
-  border:1px solid var(--line); font-family:'JetBrains Mono',monospace; font-size:11px;
-  padding:8px; resize:vertical; display:none;
-}
-textarea.show{ display:block; margin-top:8px;}
-.save-note{ font-size:10px; color:var(--muted); margin-top:6px; line-height:1.5;}
+  .discount-row{display:flex; gap:8px; margin-bottom:10px;}
+  .discount-row input{
+    flex:1; border:1.5px solid var(--line); border-radius:var(--radius-sm);
+    padding:9px 12px; font-size:13px; text-transform:uppercase;
+  }
+  .discount-row input::placeholder{text-transform:none;}
+  .discount-row button{
+    background:var(--ink); color:#fff; border:none; padding:9px 16px;
+    border-radius:var(--radius-sm); font-weight:600; font-size:12.5px; cursor:pointer; white-space:nowrap;
+  }
+  .discount-row button:hover{background:#2b2d38;}
+  .discount-error{font-size:11.5px; color:var(--coral); font-weight:600; margin:-2px 0 10px;}
+  .discount-applied{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--green-soft); color:var(--green); font-size:12.5px; font-weight:700;
+    padding:10px 12px; border-radius:var(--radius-sm); margin-bottom:12px;
+  }
+  .discount-applied button{background:none; border:none; color:var(--green); font-weight:700; cursor:pointer; font-size:11.5px; text-decoration:underline; flex-shrink:0;}
+  .member-note{font-size:11.5px; color:var(--green); font-weight:600; margin-bottom:10px;}
 
-/* credits panel */
-.credits-box{ background:var(--surface); border:1px solid var(--line); padding:22px; }
-.credits-box .role{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px;}
-.credits-box .name{ font-family:'Orbitron',sans-serif; font-size:20px; color:var(--amber); margin:4px 0 16px;}
-.credits-box p{ font-size:12px; color:var(--muted); line-height:1.8; }
-.version-tag{ display:inline-block; margin-top:14px; font-size:10px; color:var(--cyan); border:1px solid var(--line); padding:4px 8px; }
+  .total-row{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;}
+  .total-row span:first-child{font-size:13px; color:var(--muted); font-weight:600;}
+  .total-row span:last-child{font-size:14px; font-weight:700;}
+  .total-row.grand span:first-child{font-size:13px; color:var(--ink);}
+  .total-row.grand span:last-child{font-size:21px; font-weight:800;}
+  .total-row.discount span{color:var(--green) !important;}
+  .total-sub{font-size:11.5px; color:var(--faint); margin:6px 0 14px;}
+  .checkout-btn{
+    width:100%; background:var(--accent); color:#fff; border:none;
+    padding:14px; border-radius:999px; font-weight:700; font-size:14px; cursor:pointer;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .checkout-btn:hover{background:var(--accent-ink);}
+  .checkout-btn:active{transform:scale(0.98);}
+  .checkout-btn:disabled{background:var(--line); color:var(--faint); cursor:not-allowed;}
 
-/* toasts */
-.toast-stack{ position:fixed; top:16px; right:16px; z-index:50; display:flex; flex-direction:column; gap:8px; max-width:280px; }
-@media (max-width:760px){ .toast-stack{ left:16px; right:16px; max-width:none; } }
-.toast{
-  background:var(--surface); border:1px solid var(--cyan); border-left:3px solid var(--cyan);
-  padding:10px 12px; font-size:11px; color:var(--text);
-  box-shadow:0 4px 16px rgba(0,0,0,0.4); animation:toastIn 0.25s ease-out;
-  position:relative; transition:opacity .25s ease, transform .25s ease;
-}
-.toast.leaving{ opacity:0; transform:translateX(20px); }
-.toast.milestone{ border-color:var(--violet); border-left-color:var(--violet); }
-@keyframes toastIn{ 0%{ opacity:0; transform:translateX(20px);} 100%{ opacity:1; transform:translateX(0);} }
-.toast .t-label{ font-family:'Orbitron',sans-serif; font-size:9px; letter-spacing:1px; color:var(--muted); text-transform:uppercase; margin-bottom:3px; }
-.toast .t-close{ position:absolute; top:6px; right:8px; cursor:pointer; color:var(--muted); font-size:12px; line-height:1; }
-.toast .t-close:hover{ color:var(--text); }
+  /* ===== Modals (product quick view, success, quiz, seller, subscribe) ===== */
+  .modal{
+    position:fixed; top:50%; left:50%; z-index:95;
+    width:min(760px, 92vw); max-height:88vh; overflow-y:auto;
+    background:var(--surface); border-radius:var(--radius-lg);
+    transform:translate(-50%,-42%) scale(0.96); opacity:0; pointer-events:none;
+    transition:opacity .25s cubic-bezier(.16,1,.3,1), transform .32s cubic-bezier(.16,1,.3,1);
+    box-shadow:0 24px 64px rgba(0,0,0,0.24);
+  }
+  .modal.open{transform:translate(-50%,-50%) scale(1); opacity:1; pointer-events:auto;}
+  .modal.form-modal{width:min(560px, 92vw);}
+  .modal-close{
+    position:absolute; top:16px; right:16px; z-index:2;
+    width:34px; height:34px; border-radius:999px; border:none; background:var(--surface);
+    box-shadow:var(--shadow); font-size:18px; cursor:pointer; color:var(--ink);
+    transition:transform .15s ease;
+  }
+  .modal-close:hover{transform:rotate(90deg);}
+  .modal-grid{display:grid; grid-template-columns:1fr 1fr;}
+  @media (max-width:640px){ .modal-grid{grid-template-columns:1fr;} }
 
-/* modal */
-.modal-overlay{ position:fixed; inset:0; background:rgba(5,8,12,0.72); display:none; align-items:center; justify-content:center; z-index:100; padding:20px; }
-.modal-overlay.show{ display:flex; animation:overlayIn 0.15s ease; }
-@keyframes overlayIn{ from{opacity:0;} to{opacity:1;} }
-.modal-box{ background:var(--surface); border:1px solid var(--cyan); max-width:360px; width:100%; padding:22px; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
-.modal-title{ font-family:'Orbitron',sans-serif; font-size:15px; color:var(--text); margin-bottom:10px;}
-.modal-msg{ font-size:12px; color:var(--muted); line-height:1.7; margin-bottom:18px;}
-.modal-actions{ display:flex; gap:10px; justify-content:flex-end; }
-.modal-actions button{
-  font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px;
-  padding:9px 16px; cursor:pointer; border:1px solid var(--line); background:var(--surface-2); color:var(--text);
-}
-#modalConfirm{ border-color:var(--cyan); color:var(--cyan); }
-#modalConfirm:hover{ background:var(--cyan); color:#0a0f16; }
-#modalCancel:hover{ color:var(--text); border-color:#334252; }
+  .modal-media-wrap{
+    position:relative; overflow:hidden; min-height:320px;
+    border-radius:var(--radius-lg) 0 0 var(--radius-lg);
+  }
+  @media (max-width:640px){ .modal-media-wrap{border-radius:var(--radius-lg) var(--radius-lg) 0 0; min-height:240px;} }
+  .modal-media{
+    width:100%; height:100%; position:absolute; inset:0;
+    background-size:cover; background-position:center;
+    transition:transform .5s ease, opacity .2s ease;
+  }
+  .modal-media-wrap:hover .modal-media{transform:scale(1.07);}
+  .gallery-thumbs{
+    position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
+    display:flex; gap:8px; z-index:2;
+  }
+  .thumb{
+    width:34px; height:34px; border-radius:8px; border:2px solid rgba(255,255,255,0.85);
+    cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.18);
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  .thumb:hover{transform:scale(1.1);}
+  .thumb.active{border-color:#fff; box-shadow:0 0 0 2px var(--accent), 0 2px 6px rgba(0,0,0,.2);}
+
+  .modal-body{padding:28px 28px 26px; display:flex; flex-direction:column; gap:12px;}
+  .modal-body > *{animation:fadeInUp .4s cubic-bezier(.16,1,.3,1) both;}
+  .modal-body > *:nth-child(1){animation-delay:.02s;}
+  .modal-body > *:nth-child(2){animation-delay:.06s;}
+  .modal-body > *:nth-child(3){animation-delay:.10s;}
+  .modal-body > *:nth-child(4){animation-delay:.14s;}
+  .modal-body > *:nth-child(5){animation-delay:.18s;}
+  .modal-body > *:nth-child(6){animation-delay:.22s;}
+  .modal-body > *:nth-child(7){animation-delay:.26s;}
+  .modal-body > *:nth-child(8){animation-delay:.30s;}
+  .modal-body .maker{font-size:12px;}
+  .modal-body h2{font-size:22px; font-weight:800; letter-spacing:-0.01em;}
+  .modal-body .modal-price{font-size:22px; font-weight:800;}
+  .modal-body .modal-rating{font-size:13px; color:var(--muted); font-weight:600;}
+  .modal-body .modal-desc{font-size:13.5px; color:var(--muted); line-height:1.55;}
+  .modal-stock{font-size:12.5px; font-weight:700; padding:6px 0;}
+  .modal-stock.ok{color:var(--green);}
+  .modal-stock.low{color:#B45309;}
+  .modal-stock.out{color:var(--faint);}
+  .modal-qty-row{display:flex; align-items:center; gap:14px; margin-top:6px;}
+  .modal-qty-row .qty-row button{width:32px; height:32px; font-size:16px;}
+  .modal-qty-row .qty-row span{font-size:15px; min-width:20px;}
+  .modal-actions{display:flex; gap:10px; margin-top:8px;}
+  .modal-add-btn{
+    flex:1; background:var(--ink); color:#fff; border:none; padding:13px;
+    border-radius:999px; font-weight:700; font-size:14px; cursor:pointer;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .modal-add-btn:hover{background:#2b2d38;}
+  .modal-add-btn:active{transform:scale(0.98);}
+  .modal-add-btn:disabled{background:var(--line); color:var(--faint); cursor:not-allowed;}
+  .modal-fav-btn{
+    width:46px; height:46px; border-radius:999px; border:1.5px solid var(--line);
+    background:var(--surface); cursor:pointer; color:var(--ink); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .15s ease;
+  }
+  .modal-fav-btn:hover{transform:scale(1.08);}
+  .modal-fav-btn.active{color:var(--coral); border-color:var(--coral);}
+  .modal-meta{
+    display:flex; gap:16px; margin-top:10px; padding-top:14px; border-top:1px solid var(--line);
+    font-size:12px; color:var(--muted); font-weight:600;
+  }
+  .modal-meta span{display:flex; align-items:center; gap:5px;}
+  .lock-note{
+    font-size:12px; color:var(--accent-ink); background:var(--accent-soft);
+    padding:9px 12px; border-radius:8px; font-weight:600;
+  }
+  .mine-note{
+    font-size:12px; color:var(--muted);
+    background:var(--bg); padding:11px 12px; border-radius:10px;
+    display:flex; flex-direction:column; gap:9px;
+  }
+  .mine-note-top{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .mine-note-top .mine-note-actions{display:flex; gap:12px; flex-shrink:0;}
+  .mine-note-top button{background:none; border:none; font-weight:700; cursor:pointer; font-size:12px;}
+  .mine-note-top .move-btn{color:var(--accent-ink);}
+  .mine-note-top .remove-btn{color:var(--coral);}
+  .mine-move-row{display:none; gap:8px; align-items:center;}
+  .mine-move-row select{
+    flex:1; border:1.5px solid var(--line); border-radius:var(--radius-sm);
+    padding:7px 9px; font-size:12.5px; color:var(--ink);
+  }
+  .mine-manage-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .mine-manage-row input{
+    width:70px; border:1.5px solid var(--line); border-radius:var(--radius-sm);
+    padding:7px 9px; font-size:13px; color:var(--ink);
+  }
+  .mine-mini-btn{
+    border:none; border-radius:999px; padding:7px 13px; font-weight:700; font-size:11.5px;
+    cursor:pointer; white-space:nowrap; transition:opacity .15s ease;
+  }
+  .mine-mini-btn:hover{opacity:0.85;}
+  .mine-mini-btn.update{background:var(--accent); color:#fff;}
+  .mine-mini-btn.outstock{background:#FFF1E8; color:#B45309;}
+  .mine-mini-btn.restock{background:var(--green-soft); color:var(--green);}
+  .mine-manage-hint{font-size:11px; color:var(--faint);}
+
+  /* ===== Success modal ===== */
+  .success-modal .modal-body{align-items:center; text-align:center; padding:44px 32px;}
+  .success-icon{
+    width:64px; height:64px; border-radius:999px; background:var(--green-soft);
+    display:flex; align-items:center; justify-content:center; margin-bottom:8px;
+  }
+  .success-modal h2{font-size:20px;}
+  .success-modal .order-num{
+    font-size:13px; font-weight:700; color:var(--muted); background:var(--bg);
+    padding:8px 16px; border-radius:999px; margin:6px 0 2px;
+  }
+  .success-modal p{font-size:13.5px; color:var(--muted); max-width:360px; line-height:1.5;}
+  .success-modal .modal-add-btn{margin-top:10px; max-width:220px;}
+
+  /* ===== Quiz modal ===== */
+  .quiz-body, .seller-body{padding:30px 32px 28px; display:flex; flex-direction:column;}
+  .quiz-body h2, .seller-body h2{font-size:20px; letter-spacing:-0.01em; margin-bottom:6px;}
+  .quiz-sub{font-size:13px; color:var(--muted); line-height:1.5; margin-bottom:20px;}
+  .tag-grid{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;}
+  .tag-chip{
+    padding:9px 14px; border-radius:999px; border:1.5px solid var(--line);
+    background:var(--surface); font-size:13px; font-weight:600; color:var(--muted);
+    cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+    transition:transform .12s ease, border-color .15s ease, background .15s ease, color .15s ease;
+  }
+  .tag-chip:hover{border-color:var(--faint); transform:translateY(-1px);}
+  .tag-chip.active{background:var(--accent-soft); color:var(--accent-ink); border-color:var(--accent);}
+  .quiz-actions{display:flex; align-items:center; gap:18px; margin-top:18px;}
+  .quiz-skip{background:none; border:none; color:var(--muted); font-weight:600; font-size:13px; cursor:pointer;}
+  .quiz-skip:hover{text-decoration:underline;}
+
+  /* ===== Seller modal ===== */
+  .seller-body p.intro{font-size:13px; color:var(--muted); margin-bottom:20px; line-height:1.5;}
+  .form-group{margin-bottom:14px; display:flex; flex-direction:column; gap:6px;}
+  .form-group label{font-size:12.5px; font-weight:700; color:var(--ink);}
+  .form-group label span{font-weight:500; color:var(--faint);}
+  .form-group input, .form-group select, .form-group textarea{
+    border:1.5px solid var(--line); border-radius:var(--radius-sm); padding:10px 12px;
+    font-size:13.5px; color:var(--ink); width:100%;
+  }
+  .form-group select:disabled{background:var(--bg); color:var(--faint);}
+  .form-group textarea{resize:vertical; min-height:70px;}
+  .form-row{display:flex; gap:12px;}
+  .form-row .form-group{flex:1;}
+  .stock-hint{font-size:11px; color:var(--faint); margin-top:-2px;}
+  .brand-hint{font-size:11px; color:var(--accent-ink); font-weight:600; margin:-6px 0 4px;}
+  .seller-connected-note{
+    font-size:12px; color:var(--muted); margin-bottom:18px; display:flex; align-items:center;
+    justify-content:space-between; background:var(--bg); padding:10px 12px; border-radius:var(--radius-sm);
+  }
+  .seller-connected-note button{background:none; border:none; color:var(--coral); font-weight:700; cursor:pointer; font-size:11.5px;}
+  .google-btn{
+    display:flex; align-items:center; justify-content:center; gap:10px; width:100%;
+    border:1.5px solid var(--line); background:var(--surface); padding:12px; border-radius:999px;
+    font-weight:600; font-size:14px; cursor:pointer; margin-top:6px;
+  }
+  .google-btn:hover{border-color:var(--ink);}
+
+  .image-upload-row{display:flex; align-items:center; gap:12px;}
+  .image-preview{
+    width:64px; height:64px; border-radius:10px; background:var(--surface);
+    border:1.5px dashed var(--line); display:flex; align-items:center; justify-content:center;
+    overflow:hidden; font-size:9.5px; color:var(--faint); text-align:center; flex-shrink:0; padding:4px;
+  }
+  .image-preview img{width:100%; height:100%; object-fit:cover; border-radius:8px;}
+  .upload-btn{
+    background:var(--surface); border:1.5px solid var(--line); padding:9px 14px;
+    border-radius:999px; font-weight:600; font-size:12.5px; cursor:pointer;
+    transition:border-color .15s ease; display:inline-block;
+  }
+  .upload-btn:hover{border-color:var(--ink);}
+
+  /* ===== Subscribe modal ===== */
+  .sub-plans{display:flex; gap:12px; margin:16px 0;}
+  .sub-plan-btn{
+    flex:1; border:1.5px solid var(--line); border-radius:var(--radius-md); padding:16px;
+    background:var(--surface); cursor:pointer; text-align:left;
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .sub-plan-btn:hover{border-color:var(--accent); transform:translateY(-2px);}
+  .sub-plan-name{font-size:13px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;}
+  .sub-badge{background:var(--accent-soft); color:var(--accent-ink); font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px;}
+  .sub-plan-price{font-size:19px; font-weight:800;}
+  .sub-plan-price span{font-size:11px; font-weight:600; color:var(--muted);}
+  .sub-perks{display:flex; flex-direction:column; gap:6px; font-size:12.5px; color:var(--muted); font-weight:600; margin-bottom:6px;}
+  .sub-fineprint{font-size:11px; color:var(--faint); line-height:1.5;}
+
+  /* ===== Terms box (shared by subscribe + onboarding) ===== */
+  .terms-box{
+    max-height:220px; overflow-y:auto; background:var(--bg); border-radius:var(--radius-md);
+    padding:16px; font-size:12.5px; color:var(--muted); line-height:1.6; display:flex; flex-direction:column; gap:10px;
+  }
+  .terms-box strong{color:var(--ink);}
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; font-size:13px; font-weight:600;
+    padding:12px 20px; border-radius:999px;
+    opacity:0; pointer-events:none; transition:all .25s ease; z-index:99;
+    max-width:90vw; text-align:center;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  /* ===== Mascot ===== */
+  .mascot-wrap{
+    position:fixed; left:20px; bottom:20px; z-index:70;
+    display:flex; flex-direction:column; align-items:flex-start;
+  }
+  .mascot-btn{
+    width:58px; height:58px; border-radius:999px; border:none; cursor:pointer;
+    background:var(--surface); box-shadow:var(--shadow-hover);
+    display:flex; align-items:center; justify-content:center;
+    animation:mascotFloat 3.2s ease-in-out infinite;
+    padding:0;
+  }
+  .mascot-btn:hover{animation-play-state:paused; transform:translateY(-9px) scale(1.05);}
+  .mascot-bubble{
+    position:absolute; bottom:74px; left:0; width:230px;
+    background:var(--ink); color:#fff; font-size:12.5px; line-height:1.5; font-weight:500;
+    padding:13px 30px 13px 15px; border-radius:14px 14px 14px 4px;
+    box-shadow:var(--shadow-hover);
+    opacity:0; transform:translateY(8px) scale(0.96); transform-origin:bottom left;
+    pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+  }
+  .mascot-bubble.show{opacity:1; transform:translateY(0) scale(1); pointer-events:auto;}
+  .mascot-bubble-close{
+    position:absolute; top:8px; right:9px; background:none; border:none; color:rgba(255,255,255,0.7);
+    font-size:14px; cursor:pointer; line-height:1; padding:2px;
+  }
+  .mascot-bubble-close:hover{color:#fff;}
+  @media (max-width:640px){
+    .mascot-wrap{left:14px; bottom:14px;}
+    .mascot-btn{width:50px; height:50px;}
+    .mascot-bubble{width:190px; bottom:64px;}
+  }
+
+  /* ===== Onboarding ===== */
+  .onboard-overlay{
+    position:fixed; inset:0; z-index:200; background:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    padding:24px; transition:opacity .3s ease;
+  }
+  .onboard-card{
+    width:min(560px, 92vw); max-height:88vh; overflow-y:auto;
+    background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-hover);
+    padding:40px 36px; position:relative;
+  }
+  .onboard-emoji{font-size:44px; margin-bottom:14px;}
+  .onboard-card h1{font-size:24px; font-weight:800; letter-spacing:-0.01em; margin-bottom:12px;}
+  .onboard-card p{font-size:14px; color:var(--muted); line-height:1.6;}
+  .onboard-actions{display:flex; gap:12px; margin-top:26px;}
+  .onboard-btn{border:none; border-radius:999px; padding:13px 22px; font-weight:700; font-size:14px; cursor:pointer;}
+  .onboard-btn.primary{background:var(--ink); color:#fff; flex:1;}
+  .onboard-btn.primary:hover{background:#2b2d38;}
+  .onboard-btn.primary:disabled{background:var(--line); color:var(--faint); cursor:not-allowed;}
+  .onboard-btn.ghost{background:none; color:var(--muted); font-weight:600;}
+  .onboard-btn.ghost:hover{color:var(--ink);}
+  .onboard-steps{display:flex; flex-direction:column; gap:16px; margin:20px 0;}
+  .onboard-step{display:flex; gap:14px; align-items:flex-start; animation:fadeInUp .4s ease both;}
+  .onboard-step span{font-size:24px; flex-shrink:0;}
+  .onboard-step strong{font-size:14px; display:block; margin-bottom:2px;}
+  .onboard-step p{font-size:12.5px; margin:0;}
+  @media (max-width:640px){
+    .onboard-card{padding:30px 24px;}
+  }
+
+  @media (max-width:900px){
+    .layout{flex-direction:column;}
+    .filter-toggle{
+      display:flex; align-items:center; gap:8px;
+      border:1.5px solid var(--line); background:var(--surface);
+      padding:9px 16px; border-radius:999px; font-weight:600; font-size:13.5px;
+      cursor:pointer; margin-bottom:16px;
+    }
+    .sidebar{
+      position:fixed; top:0; left:0; bottom:0; z-index:92;
+      width:min(300px, 85vw);
+      background:var(--surface);
+      padding:22px; gap:24px;
+      transform:translateX(-100%);
+      transition:transform .28s cubic-bezier(.4,0,.2,1);
+      box-shadow:18px 0 44px rgba(0,0,0,0.16);
+      overflow-y:auto;
+    }
+    .sidebar.open{transform:translateX(0);}
+    .sidebar-mobile-head{
+      display:flex; align-items:center; justify-content:space-between;
+      padding-bottom:14px; margin-bottom:-4px; border-bottom:1px solid var(--line);
+    }
+    .sidebar-mobile-head span{font-size:16px; font-weight:800; letter-spacing:-0.01em;}
+    .sb-block{width:100%;}
+  }
 </style>
 </head>
 <body>
 
-<div class="travel-flash" id="travelFlash"></div>
-<div class="toast-stack" id="toastStack"></div>
-
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal-box">
-    <div class="modal-title" id="modalTitle">Title</div>
-    <div class="modal-msg" id="modalMsg">Message</div>
-    <div class="modal-actions">
-      <button id="modalCancel">Cancel</button>
-      <button id="modalConfirm">Confirm</button>
+<header class="topbar">
+  <div class="topbar-inner">
+    <button class="logo" id="logoBtn"><span class="mark">F</span>Fieldstone</button>
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="searchInput" type="text" placeholder="Search products, makers, categories…" aria-label="Search products">
+      <button class="search-clear" id="searchClear" aria-label="Clear search">×</button>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="favToggle" aria-label="Show favorites">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 20s-7-4.4-9.5-8.8C.7 7.4 2.7 4 6.2 4c2 0 3.5 1 4.8 2.6C12.3 5 13.8 4 15.8 4c3.5 0 5.5 3.4 3.7 7.2C19 15.6 12 20 12 20z" stroke="currentColor" stroke-width="1.8"/></svg>
+        <span class="cart-badge" id="favCount" style="display:none;">0</span>
+      </button>
+      <button class="icon-btn" aria-label="Account">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 20c1.6-3.6 4.8-5.5 8-5.5s6.4 1.9 8 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <button class="icon-btn" id="openCart" aria-label="Open cart">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 5h2l2.4 12.1a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 2-1.6L21 8H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="21" r="1.4" fill="currentColor"/><circle cx="18" cy="21" r="1.4" fill="currentColor"/></svg>
+        <span class="cart-badge" id="cartCount">0</span>
+      </button>
+      <button class="sell-btn" id="sellBtn">List your goods!</button>
     </div>
   </div>
+</header>
+
+<div class="layout">
+  <button class="filter-toggle" id="filterToggle">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    Filters
+  </button>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-mobile-head">
+      <span>Filters</span>
+      <button class="close-btn" id="closeSidebar" aria-label="Close filters">×</button>
+    </div>
+
+    <div class="sb-block" id="prefBlock"></div>
+    <div class="sb-block" id="subBlock"></div>
+
+    <div class="sb-block">
+      <div class="sb-section-title">Category</div>
+      <ul class="cat-list" id="catList"></ul>
+    </div>
+
+    <div class="sb-block">
+      <div class="sb-section-title">Minimum rating</div>
+      <div class="rating-stars" id="ratingStars"></div>
+      <div class="rating-label" id="ratingLabel">Any rating</div>
+    </div>
+
+    <div class="sb-block">
+      <div class="sb-section-title">Max price</div>
+      <div class="price-slider">
+        <input type="range" id="priceRange" min="0" max="100" step="2" value="100">
+        <div class="price-labels"><span>$0</span><span id="priceLabel">$100+</span></div>
+      </div>
+    </div>
+
+    <div class="sb-block">
+      <div class="sb-section-title">Availability</div>
+      <label class="check-row"><input type="checkbox" id="inStockOnly"> In stock only</label>
+    </div>
+
+    <button class="clear-filters" id="clearFilters">Clear all filters</button>
+  </aside>
+
+  <main class="content">
+    <div class="breadcrumb" id="breadcrumb" style="display:none;">
+      <button id="crumbHome">All products</button>
+      <span>›</span>
+      <span id="crumbCat"></span>
+    </div>
+
+    <div class="shop-panel" id="shopPanel">
+      <div class="shelf-ribbon" id="shelfRibbon" style="display:none;"></div>
+
+      <div class="content-head">
+        <div id="titleBlock">
+          <h1 id="resultsLabel">All products</h1>
+          <div class="sub" id="resultsCount"></div>
+        </div>
+        <div class="sort-wrap">
+          <select id="sortSelect">
+            <option value="featured">Sort: Featured</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="name">Name: A–Z</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="strip-section foryou-section" id="forYouSection" style="display:none;">
+        <div class="strip-head">
+          <div class="sb-section-title">Picked for you</div>
+          <button id="retakeQuiz">Edit preferences</button>
+        </div>
+        <div class="h-strip" id="forYouStrip"></div>
+      </div>
+
+      <div class="grid" id="productGrid"></div>
+      <div class="empty-state" id="emptyMsg" style="display:none;">
+        <strong id="emptyTitle">Nothing listed yet</strong>
+        <span id="emptySub">Be the first — list something and it'll show up right here.</span>
+        <br>
+        <button class="empty-cta" id="emptyListBtn">List your goods!</button>
+      </div>
+    </div>
+
+    <div class="strip-section" id="recentSection" style="display:none;">
+      <div class="strip-head"><div class="sb-section-title">Recently viewed</div></div>
+      <div class="h-strip" id="recentStrip"></div>
+    </div>
+  </main>
 </div>
 
-<div class="shell">
-  <div class="sidebar" id="sidebar">
-    <div class="sidebar-top">
-      <button class="collapse-btn" id="sidebarToggle">≡</button>
-      <div class="brand">DRIFT<span>·</span>COLONY</div>
-    </div>
-    <button class="navbtn active" data-panel="mine">⛏ <span class="nav-label">Mine</span></button>
-    <button class="navbtn" data-panel="structures">🏗 <span class="nav-label">Structures</span></button>
-    <button class="navbtn" data-panel="minions">👾 <span class="nav-label">Minions</span></button>
-    <button class="navbtn" data-panel="travel">🚀 <span class="nav-label">Travel</span></button>
-    <button class="navbtn" data-panel="prestige">✨ <span class="nav-label">Prestige</span></button>
-    <button class="navbtn" data-panel="universe">🌌 <span class="nav-label">Universe</span></button>
-    <button class="navbtn" data-panel="settings">⚙ <span class="nav-label">Settings</span></button>
-    <button class="navbtn" data-panel="credits">ℹ <span class="nav-label">Credits</span></button>
-    <div class="side-readout">
-      star dust<b id="stardustValSide">0</b>
-      universe cores<b id="coresValSide">0</b>
-    </div>
+<div class="overlay" id="overlay"></div>
+
+<aside class="drawer" id="drawer" aria-label="Shopping cart">
+  <div class="drawer-head">
+    <h2>Your Cart</h2>
+    <button class="close-btn" id="closeCart" aria-label="Close cart">×</button>
   </div>
+  <div class="ship-progress" id="shipProgress"></div>
+  <div class="drawer-items" id="drawerItems"></div>
+  <div class="drawer-foot">
+    <div id="memberNote"></div>
+    <div id="discountSection"></div>
+    <div id="totalsBlock"></div>
+    <button class="checkout-btn" id="checkoutBtn" disabled>Check out</button>
+  </div>
+</aside>
 
-  <div class="main">
+<div class="modal" id="quickViewModal" role="dialog" aria-label="Product details"></div>
+<div class="modal success-modal" id="successModal" role="dialog" aria-label="Order confirmation"></div>
+<div class="modal form-modal" id="quizModal" role="dialog" aria-label="Preferences quiz"></div>
+<div class="modal form-modal" id="sellerModal" role="dialog" aria-label="List an item"></div>
+<div class="modal form-modal" id="subscribeModal" role="dialog" aria-label="Fieldstone plus membership"></div>
 
-    <!-- MINE -->
-    <div class="panel active" id="panel-mine">
-      <h2>Mining Console</h2>
-      <div class="sub">Manual extraction terminal</div>
-      <div class="console">
-        <div class="ore-readout" id="oreVal">0</div>
-        <div class="ore-rate" id="oreRate">+0 ore/sec</div>
-        <div class="loc-tag" id="locTag">Location: Asteroid Drift</div>
+<div class="toast" id="toast"></div>
 
-        <div class="rock-wrap">
-          <div class="planet-ring"></div>
-          <button id="rockBtn">MINE</button>
-        </div>
-        <div class="click-stat" id="clickStat">+1 ore / click</div>
+<div class="mascot-wrap" id="mascotWrap">
+  <div class="mascot-bubble" id="mascotBubble"></div>
+  <button class="mascot-btn" id="mascotBtn" aria-label="Pebble, your shop assistant">
+    <svg width="42" height="42" viewBox="0 0 100 100">
+      <defs>
+        <linearGradient id="stoneGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#D2C1A3"/>
+          <stop offset="100%" stop-color="#A68A63"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="50" cy="56" rx="37" ry="31" fill="url(#stoneGrad)"/>
+      <circle cx="30" cy="62" r="6.5" fill="#FF9E8A" opacity="0.55"/>
+      <circle cx="70" cy="62" r="6.5" fill="#FF9E8A" opacity="0.55"/>
+      <circle cx="37" cy="50" r="4.5" fill="#12131A"/>
+      <circle cx="63" cy="50" r="4.5" fill="#12131A"/>
+      <circle cx="38.5" cy="48.5" r="1.4" fill="#fff"/>
+      <circle cx="64.5" cy="48.5" r="1.4" fill="#fff"/>
+      <path d="M38 66 Q50 76 62 66" stroke="#12131A" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    </svg>
+  </button>
+</div>
 
-        <div class="quickbuy" id="quickBuy"></div>
-      </div>
-    </div>
-
-    <!-- STRUCTURES -->
-    <div class="panel" id="panel-structures">
-      <h2>Structures</h2>
-      <div class="sub">Automated production &amp; multipliers</div>
-      <div id="buildingsList"></div>
-    </div>
-
-    <!-- MINIONS -->
-    <div class="panel" id="panel-minions">
-      <h2>Minions</h2>
-      <div class="sub">Stackable hires that upgrade your mines and pickaxes (max 500 each)</div>
-      <div id="minionsList"></div>
-    </div>
-
-    <!-- TRAVEL -->
-    <div class="panel" id="panel-travel">
-      <h2>Travel</h2>
-      <div class="sub">Reach new mining grounds</div>
-      <div id="travelContent"></div>
-    </div>
-
-    <!-- PRESTIGE -->
-    <div class="panel" id="panel-prestige">
-      <h2>Prestige</h2>
-      <div class="sub">Reset for permanent power</div>
-      <div class="prestige-box">
-        <p>Colonizing a new system resets your ore, structures, and current location, but converts total ore ever mined into permanent <span class="prestige-gain">Star Dust</span> — each point adds +2% to all production, forever. Your Mining Vessel, unlocked planets, and hired minions stay with you.</p>
-        <p id="prestigePreview">Colonizing now grants <span class="prestige-gain">+0 Star Dust</span></p>
-        <button class="prestige-btn" id="prestigeBtn" disabled>Colonize New System</button>
-      </div>
-    </div>
-
-    <!-- UNIVERSE -->
-    <div class="panel" id="panel-universe">
-      <h2>Universe</h2>
-      <div class="sub">The deepest reset — trade everything for permanent scale</div>
-      <div class="prestige-box">
-        <div class="universe-stats">
-          <div><b id="coresVal">0</b><span>Universe Cores</span></div>
-          <div><b id="universeLevelVal">0</b><span>Universes Ascended</span></div>
-        </div>
-        <p>Ascending trades <em>all</em> your Star Dust for <span class="universe-gain">Universe Cores</span> — each core adds +50% to all production, forever. Everything else resets to zero: ore, Star Dust, structures, minions, planets, and your ship. Ascending also permanently unlocks a new Universal tier of extreme-cost structures and minions.</p>
-        <p id="universePreview">Ascending now grants <span class="universe-gain">+0 Universe Core(s)</span></p>
-        <button class="universe-btn" id="ascendBtn" disabled>Ascend to New Universe</button>
-      </div>
-    </div>
-
-    <!-- SETTINGS -->
-    <div class="panel" id="panel-settings">
-      <h2>Settings</h2>
-      <div class="sub">Preferences &amp; save management</div>
-      <div class="settings-box">
-        <div class="setting-row">
-          <div><div class="label">Dev tip notifications</div><div class="hint">Rotating tips in the top-right corner</div></div>
-          <button class="toggle-btn" id="toggleTips">ON</button>
-        </div>
-        <div class="setting-row">
-          <div><div class="label">Click sound</div><div class="hint">Short tone when you mine</div></div>
-          <button class="toggle-btn" id="toggleSound">ON</button>
-        </div>
-        <div class="setting-row">
-          <div><div class="label">Reduce animations</div><div class="hint">Turns off pulsing, sparks, starfield, and transitions</div></div>
-          <button class="toggle-btn" id="toggleMotion">OFF</button>
-        </div>
-      </div>
-
-      <div class="save-panel">
-        <div class="save-actions">
-          <button id="exportBtn">Export Save</button>
-          <button id="importBtn">Import Save</button>
-          <button id="resetBtn">Reset Everything</button>
-        </div>
-        <textarea id="saveArea" placeholder="Paste save code here to import..."></textarea>
-        <div class="save-note">Autosaves to this browser when possible. Export a save code before closing if you want a backup you can restore anywhere.</div>
-      </div>
-    </div>
-
-    <!-- CREDITS -->
-    <div class="panel" id="panel-credits">
-      <h2>Credits</h2>
-      <div class="sub">About this build</div>
-      <div class="credits-box">
-        <div class="role">Created by</div>
-        <div class="name">Jake Coreman</div>
-        <p>Drift Colony is an idle mining game built around one core loop: extract, automate, multiply, and eventually reset for permanent gains — now three layers deep. It's still under active development.</p>
-        <p>Thanks for playing an in-progress build. Feedback shapes what gets built next.</p>
-        <div class="version-tag">v0.4 — in development</div>
-      </div>
-    </div>
-
+<div class="onboard-overlay" id="onboardOverlay" style="display:none;">
+  <div class="onboard-card">
+    <div id="onboardPanel"></div>
   </div>
 </div>
 
 <script>
-/* ================= CONFIG ================= */
-const BUILDINGS = [
-  { id:'drone', name:'Mining Drone', desc:'+0.5 ore/sec each', baseCost:10, growth:1.15, rate:0.5, unlockAt:0, tier:'core' },
-  { id:'laser', name:'Mining Laser', desc:'+1 ore per click, each', baseCost:15, growth:1.15, clickBonus:1, unlockAt:0, tier:'core' },
-  { id:'slot', name:'Mining Slot', desc:'Auto-mines for you, scaling with your click power', baseCost:50, growth:1.16, tier:'slots', dynamic:true, unlockAt:0 },
-  { id:'refinery', name:'Refinery', desc:'+10% to all production, each', baseCost:120, growth:1.2, multBonus:0.10, unlockAt:50, tier:'core' },
-  { id:'autoRig', name:'Auto-Rig', desc:'Simulates +2 ore/sec of clicking, each', baseCost:300, growth:1.17, rate:2, unlockAt:2000, tier:'core' },
-  { id:'warpDrone', name:'Warp Drone', desc:'+9 ore/sec each', baseCost:1500, growth:1.18, rate:9, unlockAt:800, tier:'core' },
-  { id:'cargoHauler', name:'Cargo Hauler', desc:'+15% to all production, each', baseCost:8000, growth:1.22, multBonus:0.15, unlockAt:15000, tier:'core' },
-  { id:'plasmaCutter', name:'Plasma Cutter', desc:'+8 ore per click, each', baseCost:5000, growth:1.2, clickBonus:8, unlockAt:20000, tier:'core' },
-  { id:'ironExtractor', name:'Iron Extractor', desc:'+15 ore/sec each', baseCost:2500, growth:1.19, rate:15, unlockAt:0, tier:'rusthollow' },
-  { id:'cryoHarvester', name:'Cryo Harvester', desc:'+60 ore/sec each', baseCost:40000, growth:1.2, rate:60, unlockAt:0, tier:'glacier' },
-  { id:'magmaDrill', name:'Magma Drill', desc:'+300 ore/sec each', baseCost:250000, growth:1.22, rate:300, unlockAt:0, tier:'embercore' },
-  { id:'dysonCollector', name:'Dyson Collector', desc:'+5000 ore/sec each', baseCost:1e9, growth:1.25, rate:5000, tier:'universal' },
-  { id:'singularityForge', name:'Singularity Forge', desc:'+30% to all production, each', baseCost:5e9, growth:1.28, multBonus:0.30, tier:'universal' },
-];
+  // Catalog starts empty — everything shown comes from real listings via "List your goods!"
+  const BASE_PRODUCTS = [];
 
-const LOCATIONS = [
-  { id:'home', name:'Asteroid Drift', flavor:'Your starting claim. Steady, unremarkable, reliable.', mult:1, oreReq:0, dustCost:0 },
-  { id:'rusthollow', name:'Rusthollow Moon', flavor:'An iron-rich moon streaked with old mining scars.', mult:1.5, oreReq:5000, dustCost:1 },
-  { id:'glacier', name:'Glacier Rings', flavor:'Frozen debris rings around a dead gas giant.', mult:2.2, oreReq:50000, dustCost:3 },
-  { id:'embercore', name:'Ember Core', flavor:'A cracked planet still glowing from its own core.', mult:3.5, oreReq:300000, dustCost:8 },
-];
-
-const MINION_CAP = 500;
-const MINIONS = [
-  { id:'pebbleSprite', name:'Pebble Sprite', desc:'+0.05% click value per unit (max 500)', baseCost:500, growth:1.07, tier:'core', effect:'click', perUnit:0.0005 },
-  { id:'ironGolem', name:'Iron Golem', desc:'+0.05% flat production per unit (max 500)', baseCost:5000, growth:1.07, tier:'core', effect:'flat', perUnit:0.0005 },
-  { id:'cometWhisperer', name:'Comet Whisperer', desc:'+0.03% all production per unit (max 500)', baseCost:50000, growth:1.08, tier:'core', effect:'all', perUnit:0.0003 },
-  { id:'voidSerpent', name:'Void Serpent', desc:'+0.08% click value per unit (max 500)', baseCost:400000, growth:1.08, tier:'core', effect:'click', perUnit:0.0008 },
-  { id:'worldDevourer', name:'World Devourer', desc:'Each unit adds passive ore/sec (5% of click value) and a small permanent discount on all future costs (max 500)', baseCost:3000000, growth:1.09, tier:'core', effect:'devourer', perUnit:0.05 },
-  { id:'rustCrawler', name:'Rust Crawler', desc:'+0.05% flat production per unit (max 500)', baseCost:3000, growth:1.07, tier:'rusthollow', effect:'flat', perUnit:0.0005 },
-  { id:'frostWraith', name:'Frost Wraith', desc:'+0.05% all production per unit (max 500)', baseCost:45000, growth:1.08, tier:'glacier', effect:'all', perUnit:0.0005 },
-  { id:'emberFiend', name:'Ember Fiend', desc:'+0.1% click value per unit (max 500)', baseCost:280000, growth:1.09, tier:'embercore', effect:'click', perUnit:0.001 },
-  { id:'starEater', name:'Star Eater', desc:'+0.2% all production per unit (max 500) — Universal tier', baseCost:1e7, growth:1.1, tier:'universal', effect:'all', perUnit:0.002 },
-];
-
-const TIPS = [
-  "Tip: Refineries and Cargo Haulers multiply everything — prioritize them once you have a few flat producers.",
-  "Tip: Star Dust from Prestige boosts production forever. Don't be afraid to reset once growth stalls.",
-  "This game is under active development — planets, minions, and balance are still changing.",
-  "Tip: Mining Slots scale with click power — pair them with Lasers and Plasma Cutters.",
-  "Tip: You need a Mining Vessel before the Travel tab does anything.",
-  "Tip: Minions stack up to 500 each now — spread investment instead of maxing one early.",
-  "Tip: Ascending to a new Universe resets Star Dust too, but Universe Cores are worth far more.",
-];
-
-/* ================= STATE ================= */
-let state = {
-  ore:0, totalOre:0, stardust:0,
-  universeCores:0, universeLevel:0,
-  shipBuilt:false,
-  currentLocation:'home', unlockedLocations:['home'],
-  owned:{}, minions:{},
-  settings:{ tipsOn:true, soundOn:true, reduceMotion:false }
-};
-BUILDINGS.forEach(b => state.owned[b.id] = 0);
-MINIONS.forEach(m => state.minions[m.id] = 0);
-
-const SHIP_COST = 2000;
-
-/* ================= HELPERS ================= */
-function formatNum(n){
-  if(n < 1000) return n.toFixed(n < 10 ? 1 : 0).replace(/\.0$/,'');
-  const units = ['K','M','B','T','Qa','Qi','Sx','Sp','Oc'];
-  let u = -1;
-  while(n >= 1000 && u < units.length-1){ n /= 1000; u++; }
-  return n.toFixed(2) + units[u];
-}
-function minionBonuses(){
-  let clickBonus=0, flatBonus=0, allBonus=0, devourerUnits=0;
-  MINIONS.forEach(m=>{
-    const n = state.minions[m.id]||0;
-    if(m.effect==='click') clickBonus += n*m.perUnit;
-    if(m.effect==='flat') flatBonus += n*m.perUnit;
-    if(m.effect==='all') allBonus += n*m.perUnit;
-    if(m.effect==='devourer') devourerUnits = n;
-  });
-  return {clickBonus, flatBonus, allBonus, devourerUnits};
-}
-function discountMult(){
-  const units = state.minions.worldDevourer||0;
-  return Math.pow(0.999, units);
-}
-function costOf(b){ return b.baseCost * Math.pow(b.growth, state.owned[b.id]) * discountMult(); }
-function minionCost(m){ return m.baseCost * Math.pow(m.growth, state.minions[m.id]||0) * discountMult(); }
-function stardustMult(){ return 1 + state.stardust * 0.02; }
-function universeMult(){ return 1 + state.universeCores * 0.5; }
-function currentLocationObj(){ return LOCATIONS.find(l => l.id === state.currentLocation); }
-function locationMult(){ return currentLocationObj().mult; }
-
-function clickValue(){
-  const laser = BUILDINGS.find(b=>b.id==='laser');
-  const plasma = BUILDINGS.find(b=>b.id==='plasmaCutter');
-  const base = 1 + state.owned.laser * laser.clickBonus + state.owned.plasmaCutter * plasma.clickBonus;
-  const mb = minionBonuses();
-  const minionMult = 1 + mb.clickBonus + mb.allBonus;
-  return base * minionMult * stardustMult() * locationMult() * universeMult();
-}
-
-function oreRate(){
-  let flat = 0, buildMult = 1;
-  BUILDINGS.forEach(b=>{
-    if(b.rate) flat += state.owned[b.id] * b.rate;
-    if(b.multBonus) buildMult += state.owned[b.id] * b.multBonus;
-  });
-  flat += state.owned.slot * (clickValue() / 3);
-
-  const mb = minionBonuses();
-  const minionMult = 1 + mb.flatBonus + mb.allBonus;
-
-  let result = flat * buildMult * minionMult * stardustMult() * locationMult() * universeMult();
-  result += mb.devourerUnits * clickValue() * 0.05;
-  return result;
-}
-
-function potentialStardust(){ return Math.floor(Math.sqrt(state.totalOre / 10000)); }
-function potentialUniverseCores(){ return Math.floor(state.stardust / 5); }
-
-function buildingUnlocked(b){
-  if(b.tier === 'slots') return true;
-  if(b.tier === 'universal') return state.universeLevel >= 1;
-  if(b.tier === 'core') return state.totalOre >= b.unlockAt || state.owned[b.id] > 0;
-  return state.unlockedLocations.includes(b.tier);
-}
-function minionUnlocked(m){
-  if(m.tier === 'core') return true;
-  if(m.tier === 'universal') return state.universeLevel >= 1;
-  return state.unlockedLocations.includes(m.tier);
-}
-
-/* ================= THEME ================= */
-function applyTheme(locId){
-  Array.from(document.body.classList).forEach(c=>{ if(c.startsWith('theme-')) document.body.classList.remove(c); });
-  document.body.classList.add('theme-' + locId);
-}
-function flashTravel(){
-  const el = document.getElementById('travelFlash');
-  el.classList.add('show');
-  setTimeout(()=> el.classList.remove('show'), 400);
-}
-
-/* ================= MODAL ================= */
-const modalOverlay = document.getElementById('modalOverlay');
-const modalTitle = document.getElementById('modalTitle');
-const modalMsg = document.getElementById('modalMsg');
-const modalConfirm = document.getElementById('modalConfirm');
-const modalCancel = document.getElementById('modalCancel');
-
-function showModal(title, message, onConfirm, opts={}){
-  modalTitle.textContent = title;
-  modalMsg.textContent = message;
-  modalConfirm.textContent = opts.confirmText || 'Confirm';
-  modalCancel.style.display = opts.singleButton ? 'none' : 'inline-block';
-  modalOverlay.classList.add('show');
-  const cleanup = ()=>{
-    modalOverlay.classList.remove('show');
-    modalConfirm.onclick = null;
-    modalCancel.onclick = null;
+  const CATEGORY_LIST = ["Kitchen","Garden","Bags","Textiles","Food","Tech","Tools","Furniture","Car","Motorcycle","Watches","Jewelry"];
+  const CATEGORY_ICONS = {
+    All:"🛍️", Kitchen:"🍽️", Garden:"🌱", Bags:"👜", Textiles:"🧶", Food:"🍯",
+    Tech:"💻", Tools:"🛠️", Furniture:"🪑", Car:"🚗", Motorcycle:"🏍️", Watches:"⌚", Jewelry:"💎"
   };
-  modalConfirm.onclick = ()=>{ cleanup(); if(onConfirm) onConfirm(); };
-  modalCancel.onclick = cleanup;
-}
-modalOverlay.addEventListener('click', (e)=>{ if(e.target === modalOverlay) modalOverlay.classList.remove('show'); });
+  const CATEGORIES = ["All", ...CATEGORY_LIST];
+  const VEHICLE_CATS = ["Car","Motorcycle"];
+  const VEHICLE_HIGH_VALUE_THRESHOLD = 100000;
+  const VEHICLE_HIGH_VALUE_MIN = 3, VEHICLE_HIGH_VALUE_MAX = 6;
+  const BRAND_MIN_PRICE = 100;
 
-/* ================= NOTIFICATIONS ================= */
-const toastStack = document.getElementById('toastStack');
-function toast(msg, milestone=false){
-  const el = document.createElement('div');
-  el.className = 'toast' + (milestone ? ' milestone' : '');
-  el.innerHTML = `<div class="t-label">${milestone ? 'Milestone' : 'Dev Tip'}</div>${msg}<span class="t-close">&times;</span>`;
-  el.querySelector('.t-close').addEventListener('click', ()=> removeToast(el));
-  toastStack.appendChild(el);
-  setTimeout(()=> removeToast(el), 9000);
-  while(toastStack.children.length > 4){ toastStack.removeChild(toastStack.firstChild); }
-}
-function removeToast(el){
-  if(!el.parentNode) return;
-  el.classList.add('leaving');
-  setTimeout(()=> el.remove(), 250);
-}
-let tipIndex = 0;
-setInterval(()=>{
-  if(!state.settings.tipsOn) return;
-  toast(TIPS[tipIndex % TIPS.length]);
-  tipIndex++;
-}, 42000);
-setTimeout(()=>{ if(state.settings.tipsOn) toast(TIPS[0]); }, 3000);
+  const FREE_SHIP_THRESHOLD = 75;
+  const SIZE_LIMITS = {Small:300, Medium:125, Large:80};
+  const SUBSCRIPTION_PRICE_THRESHOLD = 60;
+  const SUBSCRIPTION_DISCOUNT = 0.10;
 
-/* ================= NAV ================= */
-document.querySelectorAll('.navbtn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
-    if(btn.dataset.panel === 'travel') renderTravel();
-    if(btn.dataset.panel === 'minions') renderMinions();
-  });
-});
-document.getElementById('sidebarToggle').addEventListener('click', ()=>{
-  const sb = document.getElementById('sidebar');
-  sb.classList.toggle('collapsed');
-});
+  const UNDER30_KEY = "Gifts Under $30";
+  const TAG_OPTIONS = [
+    {key:"Kitchen & Dining", emoji:"🍽️"},
+    {key:"Garden & Outdoor", emoji:"🌱"},
+    {key:"Bags & Carry", emoji:"👜"},
+    {key:"Home Textiles", emoji:"🧶"},
+    {key:"Pantry & Food", emoji:"🍯"},
+    {key:"Handforged Metal", emoji:"🔨"},
+    {key:"Woodwork", emoji:"🪵"},
+    {key:"Ceramics", emoji:"🏺"},
+    {key:"Natural Fibers", emoji:"🌾"},
+    {key:"Tech & Gadgets", emoji:"💻"},
+    {key:"Tools & Hardware", emoji:"🛠️"},
+    {key:"Furniture", emoji:"🪑"},
+    {key:"Vehicles", emoji:"🚗"},
+    {key:"Watches & Jewelry", emoji:"💎"},
+    {key:UNDER30_KEY, emoji:"🎁"},
+  ];
 
-/* ================= RENDER ================= */
-const oreValEl = document.getElementById('oreVal');
-const oreRateEl = document.getElementById('oreRate');
-const clickStatEl = document.getElementById('clickStat');
-const stardustValSideEl = document.getElementById('stardustValSide');
-const coresValSideEl = document.getElementById('coresValSide');
-const buildingsListEl = document.getElementById('buildingsList');
-const minionsListEl = document.getElementById('minionsList');
-const quickBuyEl = document.getElementById('quickBuy');
-const locTagEl = document.getElementById('locTag');
-const prestigePreviewEl = document.getElementById('prestigePreview');
-const prestigeBtn = document.getElementById('prestigeBtn');
-const travelContentEl = document.getElementById('travelContent');
-const coresValEl = document.getElementById('coresVal');
-const universeLevelValEl = document.getElementById('universeLevelVal');
-const universePreviewEl = document.getElementById('universePreview');
-const ascendBtn = document.getElementById('ascendBtn');
+  const DISCOUNTS = {
+    "WELCOME10": {type:"percent", value:10, desc:"10% off your order"},
+    "MAKER5": {type:"flat", value:5, minSubtotal:40, desc:"$5 off orders over $40"},
+    "FREESHIP": {type:"freeship", value:0, desc:"Free shipping, any order size"},
+  };
 
-function renderQuickBuy(){
-  quickBuyEl.innerHTML = '';
-  ['drone','laser','slot'].forEach(id=>{
-    const b = BUILDINGS.find(x=>x.id===id);
-    const cost = costOf(b);
-    const btn = document.createElement('button');
-    btn.textContent = `${b.name.split(' ')[0]} — ${formatNum(cost)}`;
-    btn.disabled = state.ore < cost;
-    btn.addEventListener('click', ()=> buyBuilding(id));
-    quickBuyEl.appendChild(btn);
-  });
-}
+  const MASCOT_TIPS = [
+    "Hi, I'm Pebble 🪨 — your Fieldstone shop assistant. Tap me anytime for a tip!",
+    "Spend $75 or more and shipping's on the house.",
+    "Try code WELCOME10 at checkout for 10% off your order.",
+    "Take the quick quiz in the sidebar — I'll help surface picks made just for you.",
+    "Selling something? Look for \"List your goods!\" up top.",
+    "Tap the heart on any item to save it to your favorites.",
+    "Items $60 and up need a Fieldstone+ membership — members get 10% off everything.",
+    "The star filter in the sidebar helps you find the best-rated goods fast.",
+  ];
 
-function tierLabel(tier){
-  if(tier === 'core') return 'Core';
-  if(tier === 'slots') return 'Mining Slots';
-  if(tier === 'universal') return 'Universal';
-  const loc = LOCATIONS.find(l=>l.id===tier);
-  return loc ? loc.name : tier;
-}
-
-function renderBuildings(){
-  buildingsListEl.innerHTML = '';
-  let lastTier = null;
-  BUILDINGS.forEach(b=>{
-    if(!buildingUnlocked(b)) return;
-    if(b.tier !== lastTier){
-      const label = document.createElement('div');
-      label.className = 'section-label';
-      label.textContent = tierLabel(b.tier) + ' Structures';
-      buildingsListEl.appendChild(label);
-      lastTier = b.tier;
-    }
-    const cost = costOf(b);
-    let desc = b.desc;
-    if(b.dynamic){
-      desc = `Auto-mines for you — currently +${formatNum(state.owned.slot * (clickValue()/3))} ore/sec total`;
-    }
-    const row = document.createElement('div');
-    row.className = 'buy-row';
-    row.innerHTML = `
-      <div class="buy-info">
-        <b>${b.name}</b>
-        <div class="desc">${desc}</div>
-        <div class="owned">owned: ${state.owned[b.id]}</div>
-      </div>
-      <button class="buy-btn" data-id="${b.id}" ${state.ore < cost ? 'disabled' : ''}>${formatNum(cost)} ore</button>
-    `;
-    buildingsListEl.appendChild(row);
-  });
-  buildingsListEl.querySelectorAll('.buy-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=> buyBuilding(btn.dataset.id));
-  });
-}
-
-function renderMinions(){
-  minionsListEl.innerHTML = '';
-  let lastTier = null;
-  MINIONS.forEach(m=>{
-    if(!minionUnlocked(m)) return;
-    if(m.tier !== lastTier){
-      const label = document.createElement('div');
-      label.className = 'section-label';
-      label.textContent = tierLabel(m.tier) + ' Minions';
-      minionsListEl.appendChild(label);
-      lastTier = m.tier;
-    }
-    const owned = state.minions[m.id]||0;
-    const capped = owned >= MINION_CAP;
-    const cost = minionCost(m);
-    const row = document.createElement('div');
-    row.className = 'buy-row' + (m.id === 'worldDevourer' ? ' devourer' : '');
-    row.innerHTML = `
-      <div class="buy-info">
-        <b>${m.name}</b>
-        <div class="desc">${m.desc}</div>
-        <div class="owned">owned: ${owned} / ${MINION_CAP}</div>
-      </div>
-      <button class="buy-btn" data-minion="${m.id}" ${capped || state.ore < cost ? 'disabled' : ''}>
-        ${capped ? 'MAX' : formatNum(cost) + ' ore'}
-      </button>
-    `;
-    minionsListEl.appendChild(row);
-  });
-  minionsListEl.querySelectorAll('[data-minion]').forEach(btn=>{
-    btn.addEventListener('click', ()=> buyMinion(btn.dataset.minion));
-  });
-}
-
-function renderTravel(){
-  travelContentEl.innerHTML = '';
-  if(!state.shipBuilt){
-    const cost = SHIP_COST;
-    const box = document.createElement('div');
-    box.className = 'ship-gate';
-    box.innerHTML = `
-      <p>You'll need a Mining Vessel before you can travel anywhere. It's a one-time construction — after that, the routes to nearby planets stay open.</p>
-      <button class="build-btn" id="buildShipBtn" ${state.ore < cost ? 'disabled' : ''}>Construct Mining Vessel — ${formatNum(cost)} ore</button>
-    `;
-    travelContentEl.appendChild(box);
-    document.getElementById('buildShipBtn').addEventListener('click', buildShip);
-    return;
+  // ---------- persistence ----------
+  function loadState(key, fallback){
+    try{
+      const raw = localStorage.getItem(key);
+      return raw !== null ? JSON.parse(raw) : fallback;
+    }catch(e){ return fallback; }
+  }
+  function saveState(key, value){
+    try{ localStorage.setItem(key, JSON.stringify(value)); }catch(e){ /* storage unavailable, fail silently */ }
   }
 
-  LOCATIONS.forEach(loc=>{
-    const unlocked = state.unlockedLocations.includes(loc.id);
-    const card = document.createElement('div');
-    card.className = 'planet-card';
-    let btnHtml;
-    if(loc.id === state.currentLocation){
-      btnHtml = `<button class="planet-btn current" disabled>Stationed Here</button>`;
-    } else if(unlocked){
-      btnHtml = `<button class="planet-btn travel" data-travel="${loc.id}">Travel Here</button>`;
-    } else {
-      const canAfford = state.totalOre >= loc.oreReq && state.stardust >= loc.dustCost;
-      btnHtml = `<button class="planet-btn" data-unlock="${loc.id}" ${canAfford ? '' : 'disabled'}>Unlock — ${loc.dustCost} Star Dust</button>`;
-    }
-    card.innerHTML = `
-      <div class="planet-info">
-        <b>${loc.name} ${loc.mult > 1 ? '(x' + loc.mult + ' production)' : ''}</b>
-        <div class="flavor">${loc.flavor}</div>
-        ${!unlocked ? `<div class="req">Requires ${formatNum(loc.oreReq)} lifetime ore + ${loc.dustCost} Star Dust</div>` : ''}
-      </div>
-      ${btnHtml}
-    `;
-    travelContentEl.appendChild(card);
-  });
+  let userListings = loadState('fieldstone_listings', []);
+  let PRODUCTS = [...BASE_PRODUCTS, ...userListings];
 
-  travelContentEl.querySelectorAll('[data-travel]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      state.currentLocation = btn.dataset.travel;
-      applyTheme(state.currentLocation);
-      flashTravel();
-      renderTravel();
-      render();
+  let cart = loadState('fieldstone_cart', {});
+  let favorites = new Set(loadState('fieldstone_favs', []));
+  let recentlyViewed = loadState('fieldstone_recent', []);
+  let prefs = loadState('fieldstone_prefs', []);
+  let appliedDiscount = loadState('fieldstone_discount', null);
+  let sellerEmail = loadState('fieldstone_seller_email', null);
+  let subscribed = loadState('fieldstone_subscribed', false);
+  let subPlan = loadState('fieldstone_sub_plan', null);
+  let pendingCartAction = null;
+  let subSelectedPlan = null;
+
+  let activeCat = "All";
+  let query = "";
+  let maxPrice = 100;
+  let inStockOnly = false;
+  let minRating = 0;
+  let sortBy = "featured";
+  let showFavsOnly = false;
+
+  const catList = document.getElementById('catList');
+  const grid = document.getElementById('productGrid');
+  const emptyMsg = document.getElementById('emptyMsg');
+  const resultsLabel = document.getElementById('resultsLabel');
+  const resultsCount = document.getElementById('resultsCount');
+  const breadcrumb = document.getElementById('breadcrumb');
+  const crumbCat = document.getElementById('crumbCat');
+  const shopPanel = document.getElementById('shopPanel');
+  const shelfRibbon = document.getElementById('shelfRibbon');
+  const titleBlock = document.getElementById('titleBlock');
+
+  function stockLabel(p){
+    if(p.stock <= 0) return {text:"Out of stock", cls:"out"};
+    if(p.stock <= 4) return {text:`Only ${p.stock} left`, cls:"low"};
+    return {text:"In stock", cls:"ok"};
+  }
+
+  function shade(hex, percent){
+    const num = parseInt(hex.replace('#',''),16);
+    let r = (num>>16) + percent, g = (num>>8 & 0x00FF) + percent, b = (num & 0x0000FF) + percent;
+    r = Math.min(255,Math.max(0,r)); g = Math.min(255,Math.max(0,g)); b = Math.min(255,Math.max(0,b));
+    return '#' + (0x1000000 + r*0x10000 + g*0x100 + b).toString(16).slice(1);
+  }
+
+  function mediaStyleFor(p){
+    if(p.image) return `background-image:url('${p.image}');`;
+    return `background:linear-gradient(135deg, ${p.color}, ${shade(p.color,-18)});`;
+  }
+
+  function isHighValueVehicle(p){
+    return VEHICLE_CATS.includes(p.cat) && p.price > VEHICLE_HIGH_VALUE_THRESHOLD;
+  }
+
+  function renderCategories(){
+    catList.innerHTML = CATEGORIES.map(c=>{
+      const count = c === "All" ? PRODUCTS.length : PRODUCTS.filter(p=>p.cat===c).length;
+      const icon = CATEGORY_ICONS[c] || "🛍️";
+      return `<li><button class="cat-item ${c===activeCat && !showFavsOnly ?'active':''}" data-cat="${c}">
+        <span class="cat-left"><span class="cat-icon">${icon}</span>${c}</span>
+        <span class="count">${count}</span>
+      </button></li>`;
+    }).join('');
+    catList.querySelectorAll('.cat-item').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        activeCat = btn.dataset.cat;
+        showFavsOnly = false;
+        renderCategories();
+        renderGrid();
+        updateBreadcrumb();
+        closeSidebar();
+      });
     });
-  });
-  travelContentEl.querySelectorAll('[data-unlock]').forEach(btn=>{
-    btn.addEventListener('click', ()=> unlockLocation(btn.dataset.unlock));
-  });
-}
+  }
 
-function render(){
-  oreValEl.textContent = formatNum(state.ore) + ' ore';
-  oreRateEl.textContent = `+${formatNum(oreRate())} ore/sec`;
-  clickStatEl.textContent = `+${formatNum(clickValue())} ore / click`;
-  stardustValSideEl.textContent = formatNum(state.stardust);
-  coresValSideEl.textContent = formatNum(state.universeCores);
-  coresValEl.textContent = formatNum(state.universeCores);
-  universeLevelValEl.textContent = state.universeLevel;
-  locTagEl.textContent = `Location: ${currentLocationObj().name}`;
+  function renderRatingFilter(){
+    const container = document.getElementById('ratingStars');
+    container.innerHTML = [1,2,3,4,5].map(n=>`<button type="button" class="star-btn ${n<=minRating?'active':''}" data-star="${n}" aria-label="${n} stars and up">★</button>`).join('');
+    container.querySelectorAll('.star-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const n = parseInt(btn.dataset.star);
+        minRating = (minRating === n) ? 0 : n;
+        renderRatingFilter();
+        updateRatingLabel();
+        renderGrid();
+      });
+    });
+  }
+  function updateRatingLabel(){
+    document.getElementById('ratingLabel').textContent = minRating === 0 ? 'Any rating' : `${minRating}+ stars`;
+  }
 
-  const preview = potentialStardust();
-  prestigePreviewEl.innerHTML = `Colonizing now grants <span class="prestige-gain">+${preview} Star Dust</span>`;
-  prestigeBtn.disabled = preview <= 0;
-
-  const uPreview = potentialUniverseCores();
-  universePreviewEl.innerHTML = `Ascending now grants <span class="universe-gain">+${uPreview} Universe Core(s)</span>`;
-  ascendBtn.disabled = uPreview <= 0;
-
-  renderQuickBuy();
-  renderBuildings();
-}
-
-/* ================= ACTIONS ================= */
-function buyBuilding(id){
-  const b = BUILDINGS.find(x=>x.id===id);
-  const cost = costOf(b);
-  if(state.ore < cost) return;
-  state.ore -= cost;
-  state.owned[id]++;
-  render();
-}
-
-function buyMinion(id){
-  const m = MINIONS.find(x=>x.id===id);
-  const owned = state.minions[id]||0;
-  if(owned >= MINION_CAP) return;
-  const cost = minionCost(m);
-  if(state.ore < cost) return;
-  state.ore -= cost;
-  state.minions[id] = owned + 1;
-  render();
-  renderMinions();
-}
-
-function buildShip(){
-  if(state.ore < SHIP_COST) return;
-  state.ore -= SHIP_COST;
-  state.shipBuilt = true;
-  toast('Mining Vessel constructed. Travel routes are now open.', true);
-  render();
-  renderTravel();
-}
-
-function unlockLocation(id){
-  const loc = LOCATIONS.find(l=>l.id===id);
-  if(state.totalOre < loc.oreReq || state.stardust < loc.dustCost) return;
-  state.stardust -= loc.dustCost;
-  state.unlockedLocations.push(id);
-  toast(`${loc.name} unlocked. New structures and minions may now be available.`, true);
-  render();
-  renderTravel();
-}
-
-function mine(){
-  const val = clickValue();
-  state.ore += val;
-  state.totalOre += val;
-  spawnEffects(val);
-  playClickSound();
-  render();
-}
-
-function spawnEffects(val){
-  const btn = document.getElementById('rockBtn');
-  const wrap = document.querySelector('.rock-wrap');
-  const reduce = state.settings.reduceMotion;
-
-  btn.classList.add('pressed');
-  setTimeout(()=> btn.classList.remove('pressed'), 120);
-
-  if(!reduce){
-    const ring = document.createElement('div');
-    ring.className = 'ring';
-    wrap.appendChild(ring);
-    setTimeout(()=> ring.remove(), 600);
-
-    for(let i=0;i<5;i++){
-      const spark = document.createElement('div');
-      spark.className = 'spark';
-      const ang = Math.random()*360;
-      const dist = 40 + Math.random()*40;
-      spark.style.setProperty('--ang', ang + 'deg');
-      spark.style.setProperty('--dist', dist + 'px');
-      wrap.appendChild(spark);
-      setTimeout(()=> spark.remove(), 500);
+  function updateBreadcrumb(){
+    if(showFavsOnly){
+      breadcrumb.style.display = 'flex';
+      crumbCat.textContent = 'Favorites';
+    } else if(activeCat !== 'All'){
+      breadcrumb.style.display = 'flex';
+      crumbCat.textContent = activeCat;
+    } else {
+      breadcrumb.style.display = 'none';
     }
   }
 
-  const pop = document.createElement('div');
-  pop.className = 'pop';
-  pop.textContent = '+' + formatNum(val);
-  const dx = reduce ? '0px' : (Math.random() * 60 - 30) + 'px';
-  pop.style.setProperty('--dx', dx);
-  wrap.appendChild(pop);
-  setTimeout(()=> pop.remove(), 850);
-
-  oreValEl.classList.add('flash');
-  setTimeout(()=> oreValEl.classList.remove('flash'), 200);
-}
-
-function playClickSound(){
-  if(!state.settings.soundOn) return;
-  try{
-    if(!window._audioCtx) window._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const ctx = window._audioCtx;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = 520;
-    gain.gain.setValueAtTime(0.05, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.12);
-  }catch(e){ /* audio unavailable, ignore */ }
-}
-
-function prestige(){
-  const gain = potentialStardust();
-  if(gain <= 0) return;
-  showModal(
-    'Colonize New System?',
-    `You'll gain +${gain} Star Dust but ore and structures reset. Your ship, planets, and minions stay with you.`,
-    ()=>{
-      state.stardust += gain;
-      state.ore = 0; state.totalOre = 0;
-      state.currentLocation = 'home';
-      applyTheme('home');
-      BUILDINGS.forEach(b => state.owned[b.id] = 0);
-      toast(`Colonized a new system. +${gain} Star Dust banked permanently.`, true);
-      render();
-      save();
-    },
-    { confirmText:'Colonize' }
-  );
-}
-
-function ascend(){
-  const gain = potentialUniverseCores();
-  if(gain <= 0) return;
-  showModal(
-    'Ascend to New Universe?',
-    `You'll gain +${gain} Universe Core(s), each worth +50% to all production forever. Everything resets: ore, Star Dust, structures, minions, planets, and your ship.`,
-    ()=>{
-      state.universeCores += gain;
-      state.universeLevel += 1;
-      state.ore = 0; state.totalOre = 0; state.stardust = 0;
-      state.shipBuilt = false;
-      state.currentLocation = 'home'; state.unlockedLocations = ['home'];
-      BUILDINGS.forEach(b => state.owned[b.id] = 0);
-      MINIONS.forEach(m => state.minions[m.id] = 0);
-      applyTheme('home');
-      toast(`Ascended to Universe ${state.universeLevel}. +${gain} Universe Core(s) banked. Universal-tier gear unlocked.`, true);
-      render();
-      renderTravel();
-      renderMinions();
-      save();
-    },
-    { confirmText:'Ascend' }
-  );
-}
-
-/* ================= LOOP ================= */
-setInterval(()=>{
-  const rate = oreRate();
-  if(rate > 0){
-    state.ore += rate / 10;
-    state.totalOre += rate / 10;
+  function filteredSorted(){
+    const effectiveMax = maxPrice >= 100 ? Infinity : maxPrice;
+    let items = PRODUCTS.filter(p=>{
+      if(showFavsOnly && !favorites.has(p.id)) return false;
+      const matchesCat = showFavsOnly || activeCat === 'All' || p.cat === activeCat;
+      const matchesQuery = !query || (p.name + p.maker + p.desc).toLowerCase().includes(query.toLowerCase());
+      const matchesPrice = p.price <= effectiveMax;
+      const matchesStock = !inStockOnly || p.stock > 0;
+      const matchesRating = p.rating >= minRating;
+      return matchesCat && matchesQuery && matchesPrice && matchesStock && matchesRating;
+    });
+    if(sortBy === 'price-asc') items.sort((a,b)=>a.price-b.price);
+    else if(sortBy === 'price-desc') items.sort((a,b)=>b.price-a.price);
+    else if(sortBy === 'name') items.sort((a,b)=>a.name.localeCompare(b.name));
+    return items;
   }
-  render();
-}, 100);
-setInterval(save, 5000);
 
-/* ================= SAVE/LOAD ================= */
-function save(){
-  try{ localStorage.setItem('driftColonySave', JSON.stringify(state)); }
-  catch(e){ /* storage unavailable — export/import still works */ }
-}
-function load(){
-  try{
-    const raw = localStorage.getItem('driftColonySave');
-    if(raw){
-      const parsed = JSON.parse(raw);
-      state = Object.assign(state, parsed);
-      BUILDINGS.forEach(b => { if(!(b.id in state.owned)) state.owned[b.id] = 0; });
-      MINIONS.forEach(m => { if(!(m.id in state.minions)) state.minions[m.id] = 0; });
-      if(!state.settings) state.settings = { tipsOn:true, soundOn:true, reduceMotion:false };
-      if(typeof state.universeCores !== 'number') state.universeCores = 0;
-      if(typeof state.universeLevel !== 'number') state.universeLevel = 0;
+  function updateShelf(itemCount){
+    if(showFavsOnly){
+      shopPanel.classList.add('boxed');
+      shelfRibbon.style.display = 'flex';
+      shelfRibbon.innerHTML = `<div class="icon">❤️</div><div><h2>Your favorites</h2><p>${itemCount} saved ${itemCount===1?'item':'items'}</p></div>`;
+      titleBlock.style.display = 'none';
+    } else if(activeCat !== 'All'){
+      shopPanel.classList.add('boxed');
+      shelfRibbon.style.display = 'flex';
+      const icon = CATEGORY_ICONS[activeCat] || '🛍️';
+      shelfRibbon.innerHTML = `<div class="icon">${icon}</div><div><h2>${activeCat}</h2><p>${itemCount} ${itemCount===1?'item':'items'} from independent makers</p></div>`;
+      titleBlock.style.display = 'none';
+    } else {
+      shopPanel.classList.remove('boxed');
+      shelfRibbon.style.display = 'none';
+      titleBlock.style.display = 'block';
     }
-  }catch(e){ /* no saved state available */ }
-}
-
-document.getElementById('rockBtn').addEventListener('click', mine);
-document.getElementById('prestigeBtn').addEventListener('click', prestige);
-document.getElementById('ascendBtn').addEventListener('click', ascend);
-
-document.getElementById('exportBtn').addEventListener('click', ()=>{
-  const area = document.getElementById('saveArea');
-  area.value = btoa(JSON.stringify(state));
-  area.classList.add('show');
-  area.select();
-});
-document.getElementById('importBtn').addEventListener('click', ()=>{
-  const area = document.getElementById('saveArea');
-  if(!area.classList.contains('show')){
-    area.classList.add('show'); area.value = ''; area.focus(); return;
   }
-  try{
-    const parsed = JSON.parse(atob(area.value.trim()));
-    state = Object.assign(state, parsed);
-    applyTheme(state.currentLocation);
-    render();
-    toast('Save imported successfully.');
-  }catch(e){
-    showModal('Import Failed', 'Could not read that save code. Double-check you copied the whole string.', null, { singleButton:true, confirmText:'OK' });
+
+  function renderGrid(){
+    const items = filteredSorted();
+    if(showFavsOnly){
+      resultsLabel.textContent = 'Your favorites';
+    } else {
+      resultsLabel.textContent = activeCat === 'All' ? 'All products' : activeCat;
+    }
+    resultsCount.textContent = items.length + (items.length === 1 ? ' item' : ' items') + ' found';
+    updateShelf(items.length);
+
+    const emptyCta = document.getElementById('emptyListBtn');
+
+    if(items.length === 0){
+      grid.style.display = 'none';
+      emptyMsg.style.display = 'block';
+      if(PRODUCTS.length === 0){
+        document.getElementById('emptyTitle').textContent = "Nothing listed yet";
+        document.getElementById('emptySub').textContent = "Be the first — list something and it'll show up right here.";
+        emptyCta.style.display = 'inline-block';
+      } else if(showFavsOnly){
+        document.getElementById('emptyTitle').textContent = "No favorites yet";
+        document.getElementById('emptySub').textContent = "Tap the heart on any product to save it here.";
+        emptyCta.style.display = 'none';
+      } else if(query){
+        document.getElementById('emptyTitle').textContent = `No results for "${query}"`;
+        document.getElementById('emptySub').textContent = "Try a different search term or clear your filters.";
+        emptyCta.style.display = 'none';
+      } else {
+        document.getElementById('emptyTitle').textContent = "No products match your filters";
+        document.getElementById('emptySub').textContent = "Try clearing a filter or searching a different term.";
+        emptyCta.style.display = 'none';
+      }
+      renderRecent();
+      renderForYou();
+      return;
+    }
+    grid.style.display = 'grid';
+    emptyMsg.style.display = 'none';
+
+    grid.innerHTML = items.map((p, idx) => {
+      const sl = stockLabel(p);
+      const delay = Math.min(idx * 35, 280);
+      const locked = p.price > SUBSCRIPTION_PRICE_THRESHOLD && !subscribed;
+      return `
+      <article class="card" data-open="${p.id}" style="animation-delay:${delay}ms;">
+        <div class="card-media">
+          <div class="swatch" style="${mediaStyleFor(p)}"></div>
+          <div class="badge-stack">
+            ${p.isUserListing ? `<span class="badge mine">Your listing</span>` : ''}
+            ${locked ? `<span class="badge locked">Fieldstone+</span>` : ''}
+            ${sl.cls !== 'ok' ? `<span class="badge ${sl.cls}">${sl.text}</span>` : ''}
+          </div>
+          <button class="fav-btn ${favorites.has(p.id)?'active':''}" data-fav="${p.id}" aria-label="Save to favorites">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="${favorites.has(p.id)?'currentColor':'none'}"><path d="M12 20s-7-4.4-9.5-8.8C.7 7.4 2.7 4 6.2 4c2 0 3.5 1 4.8 2.6C12.3 5 13.8 4 15.8 4c3.5 0 5.5 3.4 3.7 7.2C19 15.6 12 20 12 20z" stroke="currentColor" stroke-width="1.8"/></svg>
+          </button>
+          <button class="quick-add" data-id="${p.id}">${p.stock <= 0 ? 'Out of stock' : (locked ? '🔒 Unlock to add' : '+ Quick Add')}</button>
+        </div>
+        <div class="card-body">
+          <div class="maker">${p.maker}</div>
+          <h3>${p.name}</h3>
+          <div class="desc">${p.desc.split('. ')[0]}.</div>
+          <div class="card-foot">
+            <span class="price">$${p.price.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+            <span class="rating">★ ${p.rating} <span style="color:var(--faint); font-weight:500;">(${p.reviews})</span></span>
+          </div>
+        </div>
+      </article>
+    `}).join('');
+
+    grid.querySelectorAll('.card').forEach(card=>{
+      card.addEventListener('click', (e)=>{
+        if(e.target.closest('.quick-add') || e.target.closest('.fav-btn')) return;
+        openQuickView(parseInt(card.dataset.open));
+      });
+    });
+    grid.querySelectorAll('.quick-add').forEach(btn=>{
+      const id = parseInt(btn.dataset.id);
+      const prod = PRODUCTS.find(p=>p.id===id);
+      if(prod.stock <= 0){ btn.disabled = true; return; }
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const added = addToCart(id, 1);
+        if(added){
+          btn.textContent = "✓ Added";
+          btn.classList.add('added');
+          setTimeout(()=>{
+            btn.textContent = prod.price > SUBSCRIPTION_PRICE_THRESHOLD && !subscribed ? '🔒 Unlock to add' : '+ Quick Add';
+            btn.classList.remove('added');
+          }, 900);
+        }
+      });
+    });
+    grid.querySelectorAll('.fav-btn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        toggleFavorite(parseInt(btn.dataset.fav));
+      });
+    });
+
+    renderRecent();
+    renderForYou();
   }
-});
-document.getElementById('resetBtn').addEventListener('click', ()=>{
-  showModal(
-    'Reset Everything?',
-    'This will erase Star Dust, Universe Cores, unlocked planets, minions, and all structures. This cannot be undone.',
-    ()=>{
-      state = {
-        ore:0, totalOre:0, stardust:0, universeCores:0, universeLevel:0,
-        shipBuilt:false, currentLocation:'home', unlockedLocations:['home'],
-        owned:{}, minions:{}, settings: state.settings
+
+  document.getElementById('emptyListBtn').addEventListener('click', openSeller);
+
+  // ---------- preferences quiz ----------
+  let tempPrefs = new Set(prefs);
+
+  function getPreferenceMatches(){
+    if(prefs.length===0) return [];
+    return PRODUCTS.map(p=>{
+      let score = 0;
+      prefs.forEach(t=>{
+        if(t === UNDER30_KEY){ if(p.price < 30) score++; }
+        else if((p.tags||[]).includes(t)) score++;
+      });
+      return {p, score};
+    }).filter(x=>x.score>0).sort((a,b)=> b.score-a.score || b.p.rating-a.p.rating).map(x=>x.p);
+  }
+
+  function renderForYou(){
+    const section = document.getElementById('forYouSection');
+    const strip = document.getElementById('forYouStrip');
+    const matches = getPreferenceMatches().slice(0,8);
+    if(prefs.length===0 || matches.length===0){ section.style.display='none'; return; }
+    section.style.display='block';
+    strip.innerHTML = matches.map(p=>`
+      <div class="strip-card" data-open="${p.id}">
+        <div class="swatch" style="${mediaStyleFor(p)}"></div>
+        <div class="sc-body">
+          <h4>${p.name}</h4>
+          <span class="price">$${p.price.toLocaleString()}</span>
+        </div>
+      </div>
+    `).join('');
+    strip.querySelectorAll('.strip-card').forEach(c=> c.addEventListener('click', ()=> openQuickView(parseInt(c.dataset.open))));
+  }
+
+  function renderPrefBlock(){
+    const block = document.getElementById('prefBlock');
+    if(prefs.length === 0){
+      block.innerHTML = `
+        <div class="pref-card">
+          <h4>🎯 What are you into?</h4>
+          <p>Take a 30-second quiz and we'll surface picks made for you.</p>
+          <button class="take-quiz-btn" id="takeQuizBtn">Take the quiz</button>
+        </div>
+      `;
+      document.getElementById('takeQuizBtn').addEventListener('click', openQuiz);
+    } else {
+      block.innerHTML = `
+        <div class="pref-card">
+          <h4>🎯 Picked for you</h4>
+          <div class="pref-chips">${prefs.map(p=>`<span class="pref-chip-mini">${p}</span>`).join('')}</div>
+          <div class="pref-edit-row">
+            <button id="editPrefsBtn">Edit</button>
+            <button id="clearPrefsBtn">Clear</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('editPrefsBtn').addEventListener('click', openQuiz);
+      document.getElementById('clearPrefsBtn').addEventListener('click', ()=>{
+        prefs = [];
+        saveState('fieldstone_prefs', prefs);
+        renderPrefBlock();
+        renderGrid();
+      });
+    }
+  }
+
+  function openQuiz(){
+    tempPrefs = new Set(prefs);
+    renderQuizModal();
+    openOverlayFor(document.getElementById('quizModal'));
+  }
+
+  function renderQuizModal(){
+    const modal = document.getElementById('quizModal');
+    modal.innerHTML = `
+      <button class="modal-close" id="quizClose" aria-label="Close">×</button>
+      <div class="quiz-body">
+        <h2>What do you like to see in Fieldstone?</h2>
+        <p class="quiz-sub">Pick a few things you're into — we'll surface picks that match, right on the shop page.</p>
+        <div class="tag-grid" id="tagGrid">
+          ${TAG_OPTIONS.map(t=>`<button type="button" class="tag-chip ${tempPrefs.has(t.key)?'active':''}" data-tag="${t.key}">${t.emoji} ${t.key}</button>`).join('')}
+        </div>
+        <div class="quiz-actions">
+          <button class="modal-add-btn" id="quizConfirm" style="flex:0 0 auto; padding:12px 22px;">Show me picks</button>
+          <button class="quiz-skip" id="quizSkip">Skip for now</button>
+        </div>
+      </div>
+    `;
+    modal.querySelectorAll('.tag-chip').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
+        const tag = chip.dataset.tag;
+        if(tempPrefs.has(tag)) tempPrefs.delete(tag); else tempPrefs.add(tag);
+        chip.classList.toggle('active');
+      });
+    });
+    document.getElementById('quizClose').addEventListener('click', closeAllModals);
+    document.getElementById('quizSkip').addEventListener('click', closeAllModals);
+    document.getElementById('quizConfirm').addEventListener('click', ()=>{
+      prefs = Array.from(tempPrefs);
+      saveState('fieldstone_prefs', prefs);
+      closeAllModals();
+      renderPrefBlock();
+      renderGrid();
+      if(prefs.length>0) showToast("Picks made for you are ready below");
+    });
+  }
+  document.getElementById('retakeQuiz').addEventListener('click', openQuiz);
+
+  // ---------- Fieldstone+ subscription ----------
+  function renderSubBlock(){
+    const block = document.getElementById('subBlock');
+    if(subscribed){
+      block.innerHTML = `
+        <div class="pref-card member">
+          <h4>✓ Fieldstone+ member</h4>
+          <p>10% off every order, items $${SUBSCRIPTION_PRICE_THRESHOLD}+ unlocked, and free member codes. Billed ${subPlan==='yearly' ? '$399/year' : '$39.99/week'}.</p>
+          <div class="pref-edit-row"><button id="cancelSubBtn" style="color:var(--coral);">Cancel membership</button></div>
+        </div>
+      `;
+      document.getElementById('cancelSubBtn').addEventListener('click', ()=>{
+        subscribed = false; subPlan = null;
+        saveState('fieldstone_subscribed', false);
+        saveState('fieldstone_sub_plan', null);
+        renderSubBlock();
+        renderGrid();
+        updateCartUI();
+        showToast("Fieldstone+ membership canceled");
+      });
+    } else {
+      block.innerHTML = `
+        <div class="pref-card">
+          <h4>🔒 Fieldstone+</h4>
+          <p>Required to buy items $${SUBSCRIPTION_PRICE_THRESHOLD}+. Members get 10% off and free bonus codes.</p>
+          <button class="take-quiz-btn" id="viewSubBtn">See plans</button>
+        </div>
+      `;
+      document.getElementById('viewSubBtn').addEventListener('click', ()=>{
+        pendingCartAction = null;
+        renderSubscribeModal('plans');
+        openOverlayFor(document.getElementById('subscribeModal'));
+      });
+    }
+  }
+
+  function openSubscribeModal(id, qty){
+    pendingCartAction = {id, qty};
+    renderSubscribeModal('plans');
+    openOverlayFor(document.getElementById('subscribeModal'));
+  }
+
+  function subPlanLabel(plan){
+    return plan === 'yearly' ? '$399/year' : '$39.99/week';
+  }
+
+  function renderSubscribeModal(step){
+    const modal = document.getElementById('subscribeModal');
+
+    if(step === 'plans'){
+      modal.innerHTML = `
+        <button class="modal-close" id="subClose" aria-label="Close">×</button>
+        <div class="seller-body">
+          <h2>🔒 Fieldstone+ required</h2>
+          <p class="intro">Items $${SUBSCRIPTION_PRICE_THRESHOLD} and up are reserved for Fieldstone+ members. Subscribe to unlock this item, plus an automatic 10% member discount on every order.</p>
+          <div class="sub-plans">
+            <button class="sub-plan-btn" id="subWeekly">
+              <div class="sub-plan-name">Weekly</div>
+              <div class="sub-plan-price">$39.99<span>/week</span></div>
+            </button>
+            <button class="sub-plan-btn" id="subYearly">
+              <div class="sub-plan-name">Yearly <span class="sub-badge">Best value</span></div>
+              <div class="sub-plan-price">$399<span>/year</span></div>
+            </button>
+          </div>
+          <div class="sub-perks">
+            <div>✓ Unlock items $${SUBSCRIPTION_PRICE_THRESHOLD} and up</div>
+            <div>✓ Automatic 10% member discount</div>
+            <div>✓ Exclusive discount codes, free to use</div>
+          </div>
+        </div>
+      `;
+      document.getElementById('subClose').addEventListener('click', closeAllModals);
+      document.getElementById('subWeekly').addEventListener('click', ()=>{ subSelectedPlan = 'weekly'; renderSubscribeModal('confirm'); });
+      document.getElementById('subYearly').addEventListener('click', ()=>{ subSelectedPlan = 'yearly'; renderSubscribeModal('confirm'); });
+
+    } else if(step === 'confirm'){
+      modal.innerHTML = `
+        <button class="modal-close" id="subClose" aria-label="Close">×</button>
+        <div class="seller-body">
+          <h2>Are you sure?</h2>
+          <p class="intro">You're about to start a Fieldstone+ membership at <strong>${subPlanLabel(subSelectedPlan)}</strong>. You'll unlock items $${SUBSCRIPTION_PRICE_THRESHOLD}+ and get 10% off every order until you cancel.</p>
+          <div class="quiz-actions">
+            <button class="modal-add-btn" id="subConfirmYes" style="flex:0 0 auto; padding:12px 22px;">Yes, continue</button>
+            <button class="quiz-skip" id="subConfirmBack">Go back</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('subClose').addEventListener('click', closeAllModals);
+      document.getElementById('subConfirmBack').addEventListener('click', ()=> renderSubscribeModal('plans'));
+      document.getElementById('subConfirmYes').addEventListener('click', ()=> renderSubscribeModal('terms'));
+
+    } else if(step === 'terms'){
+      modal.innerHTML = `
+        <button class="modal-close" id="subClose" aria-label="Close">×</button>
+        <div class="seller-body">
+          <h2>Fieldstone+ Terms</h2>
+          <div class="terms-box">
+            <p>By subscribing you agree to be billed <strong>${subPlanLabel(subSelectedPlan)}</strong> until you cancel from the sidebar.</p>
+            <p><strong>Buyer responsibility.</strong> Fieldstone+ unlocks the ability to purchase higher-value listings. Fieldstone does not verify sellers or items. If you are scammed, defrauded, or otherwise harmed through a transaction on this site, that is entirely between you and the other party — Fieldstone bears no responsibility or liability.</p>
+            <p>This membership is simulated for demo purposes; no real payment is processed.</p>
+          </div>
+          <label class="check-row" style="padding:0; margin:14px 0;">
+            <input type="checkbox" id="subTermsCheck"> I have read and agree to these terms
+          </label>
+          <button class="modal-add-btn" id="subTermsAgree" disabled>Agree & Subscribe</button>
+        </div>
+      `;
+      document.getElementById('subClose').addEventListener('click', closeAllModals);
+      const cb = document.getElementById('subTermsCheck');
+      const agreeBtn = document.getElementById('subTermsAgree');
+      cb.addEventListener('change', ()=>{ agreeBtn.disabled = !cb.checked; });
+      agreeBtn.addEventListener('click', ()=> activateSubscription(subSelectedPlan));
+    }
+  }
+
+  function activateSubscription(plan){
+    subscribed = true;
+    subPlan = plan;
+    saveState('fieldstone_subscribed', true);
+    saveState('fieldstone_sub_plan', plan);
+    subSelectedPlan = null;
+    closeAllModals();
+    renderSubBlock();
+    renderGrid();
+    updateCartUI();
+    showToast(`🎉 Fieldstone+ activated — ${subPlanLabel(plan)}`);
+    if(pendingCartAction){
+      addToCart(pendingCartAction.id, pendingCartAction.qty, true);
+      pendingCartAction = null;
+    }
+  }
+
+  // ---------- favorites ----------
+  function toggleFavorite(id){
+    if(favorites.has(id)) favorites.delete(id);
+    else favorites.add(id);
+    saveState('fieldstone_favs', Array.from(favorites));
+    updateFavUI();
+    renderGrid();
+    refreshOpenModal(id);
+  }
+  function updateFavUI(){
+    const count = favorites.size;
+    const favCountEl = document.getElementById('favCount');
+    const favToggleBtn = document.getElementById('favToggle');
+    if(count > 0){ favCountEl.style.display='flex'; favCountEl.textContent = count; }
+    else favCountEl.style.display = 'none';
+    favToggleBtn.classList.toggle('fav-active', showFavsOnly);
+  }
+  document.getElementById('favToggle').addEventListener('click', ()=>{
+    showFavsOnly = !showFavsOnly;
+    updateFavUI();
+    renderCategories();
+    renderGrid();
+    updateBreadcrumb();
+  });
+
+  // ---------- recently viewed ----------
+  function pushRecent(id){
+    recentlyViewed = [id, ...recentlyViewed.filter(x=>x!==id)].slice(0,8);
+    saveState('fieldstone_recent', recentlyViewed);
+  }
+  function renderRecent(){
+    const section = document.getElementById('recentSection');
+    const strip = document.getElementById('recentStrip');
+    const items = recentlyViewed.map(id=>PRODUCTS.find(p=>p.id===id)).filter(Boolean);
+    if(items.length === 0){ section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    strip.innerHTML = items.map(p=>`
+      <div class="strip-card" data-open="${p.id}">
+        <div class="swatch" style="${mediaStyleFor(p)}"></div>
+        <div class="sc-body">
+          <h4>${p.name}</h4>
+          <span class="price">$${p.price.toLocaleString()}</span>
+        </div>
+      </div>
+    `).join('');
+    strip.querySelectorAll('.strip-card').forEach(c=>{
+      c.addEventListener('click', ()=> openQuickView(parseInt(c.dataset.open)));
+    });
+  }
+
+  // ---------- cart ----------
+  function addToCart(id, qty, bypassGate){
+    const prod = PRODUCTS.find(p=>p.id===id);
+    if(!prod) return false;
+    if(!bypassGate && prod.price > SUBSCRIPTION_PRICE_THRESHOLD && !subscribed){
+      openSubscribeModal(id, qty);
+      return false;
+    }
+    const current = cart[id] || 0;
+    const next = Math.min(current + qty, prod.stock);
+    cart[id] = next;
+    saveState('fieldstone_cart', cart);
+    updateCartUI();
+    showToast(`${prod.name} added to cart`);
+    return true;
+  }
+  function changeQty(id, delta){
+    const prod = PRODUCTS.find(p=>p.id===parseInt(id));
+    let next = (cart[id] || 0) + delta;
+    next = Math.min(next, prod.stock);
+    if(next <= 0) delete cart[id];
+    else cart[id] = next;
+    saveState('fieldstone_cart', cart);
+    updateCartUI();
+  }
+  function removeItem(id){
+    delete cart[id];
+    saveState('fieldstone_cart', cart);
+    updateCartUI();
+  }
+
+  function cartTotal(){
+    return Object.entries(cart).reduce((sum,[id,qty])=>{
+      const p = PRODUCTS.find(pr=>pr.id === parseInt(id));
+      return p ? sum + p.price*qty : sum;
+    },0);
+  }
+
+  function computeTotals(){
+    const subtotal = cartTotal();
+    let codeDiscount = 0;
+    let freeshipForced = false;
+    if(appliedDiscount && DISCOUNTS[appliedDiscount]){
+      const d = DISCOUNTS[appliedDiscount];
+      if(d.type === 'percent') codeDiscount = subtotal * d.value / 100;
+      else if(d.type === 'flat') codeDiscount = Math.min(d.value, subtotal);
+      else if(d.type === 'freeship') freeshipForced = true;
+    }
+    const memberDiscount = subscribed ? subtotal * SUBSCRIPTION_DISCOUNT : 0;
+    const discountAmount = Math.min(codeDiscount + memberDiscount, subtotal);
+    const total = Math.max(0, subtotal - discountAmount);
+    return {subtotal, codeDiscount, memberDiscount, discountAmount, total, freeshipForced};
+  }
+
+  function applyDiscountCode(rawCode){
+    const code = (rawCode || '').trim().toUpperCase();
+    const errEl = document.getElementById('discountError');
+    if(!code) return;
+    const d = DISCOUNTS[code];
+    if(!d){
+      if(errEl){ errEl.textContent = "That code isn't valid."; errEl.style.display = 'block'; }
+      return;
+    }
+    const subtotal = cartTotal();
+    if(d.minSubtotal && subtotal < d.minSubtotal){
+      if(errEl){ errEl.textContent = `Add $${(d.minSubtotal - subtotal).toFixed(2)} more to use this code.`; errEl.style.display = 'block'; }
+      return;
+    }
+    appliedDiscount = code;
+    saveState('fieldstone_discount', appliedDiscount);
+    updateCartUI();
+    showToast(`Code ${code} applied — ${d.desc}`);
+  }
+  function removeDiscount(){
+    appliedDiscount = null;
+    saveState('fieldstone_discount', null);
+    updateCartUI();
+  }
+
+  function updateCartUI(){
+    const count = Object.values(cart).reduce((a,b)=>a+b,0);
+    document.getElementById('cartCount').textContent = count;
+
+    const drawerItems = document.getElementById('drawerItems');
+    const ids = Object.keys(cart).filter(id => cart[id] > 0);
+    if(ids.length === 0){
+      drawerItems.innerHTML = `<div class="drawer-empty">Your cart is empty.</div>`;
+    } else {
+      drawerItems.innerHTML = ids.map(id=>{
+        const p = PRODUCTS.find(pr=>pr.id === parseInt(id));
+        const qty = cart[id];
+        return `
+          <div class="drawer-item">
+            <div class="swatch" style="${mediaStyleFor(p)}"></div>
+            <div class="di-info">
+              <div class="maker">${p.maker}</div>
+              <h4 data-open="${id}">${p.name}</h4>
+              <div class="qty-row">
+                <button data-id="${id}" data-delta="-1" aria-label="Decrease quantity">−</button>
+                <span>${qty}</span>
+                <button data-id="${id}" data-delta="1" aria-label="Increase quantity" ${qty>=p.stock?'disabled style="opacity:.4;cursor:not-allowed;"':''}>+</button>
+              </div>
+              <button class="remove-link" data-remove="${id}">Remove</button>
+            </div>
+            <div class="di-price">$${(p.price*qty).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+          </div>
+        `;
+      }).join('');
+      drawerItems.querySelectorAll('[data-delta]').forEach(b=>{
+        b.addEventListener('click', ()=> changeQty(b.dataset.id, parseInt(b.dataset.delta)));
+      });
+      drawerItems.querySelectorAll('[data-remove]').forEach(b=>{
+        b.addEventListener('click', ()=> removeItem(b.dataset.remove));
+      });
+      drawerItems.querySelectorAll('.di-info h4').forEach(h=>{
+        h.addEventListener('click', ()=>{ closeDrawer(); openQuickView(parseInt(h.dataset.open)); });
+      });
+    }
+
+    const {subtotal, codeDiscount, memberDiscount, total, freeshipForced} = computeTotals();
+
+    const memberNoteEl = document.getElementById('memberNote');
+    memberNoteEl.innerHTML = subscribed ? `<div class="member-note">✓ Fieldstone+ member — 10% off is already applied below.</div>` : '';
+
+    const discountSection = document.getElementById('discountSection');
+    if(appliedDiscount && DISCOUNTS[appliedDiscount]){
+      discountSection.innerHTML = `
+        <div class="discount-applied">
+          <span>✓ ${appliedDiscount} applied — ${DISCOUNTS[appliedDiscount].desc}</span>
+          <button id="removeDiscountBtn">Remove</button>
+        </div>
+      `;
+      document.getElementById('removeDiscountBtn').addEventListener('click', removeDiscount);
+    } else {
+      discountSection.innerHTML = `
+        <div class="discount-row">
+          <input type="text" id="discountInput" placeholder="Discount code">
+          <button id="discountApplyBtn">Apply</button>
+        </div>
+        <div class="discount-error" id="discountError" style="display:none;"></div>
+      `;
+      const applyBtn = document.getElementById('discountApplyBtn');
+      const input = document.getElementById('discountInput');
+      applyBtn.addEventListener('click', ()=> applyDiscountCode(input.value));
+      input.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter'){ e.preventDefault(); applyDiscountCode(input.value); }
+      });
+    }
+
+    const totalsBlock = document.getElementById('totalsBlock');
+    let rows = `<div class="total-row"><span>Subtotal</span><span>$${subtotal.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</span></div>`;
+    if(codeDiscount > 0){
+      rows += `<div class="total-row discount"><span>Discount</span><span>−$${codeDiscount.toFixed(2)}</span></div>`;
+    }
+    if(memberDiscount > 0){
+      rows += `<div class="total-row discount"><span>Fieldstone+ (10%)</span><span>−$${memberDiscount.toFixed(2)}</span></div>`;
+    }
+    rows += `<div class="total-row grand"><span>Total</span><span>$${total.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</span></div>`;
+    rows += `<div class="total-sub">Shipping and taxes calculated at checkout.</div>`;
+    totalsBlock.innerHTML = rows;
+
+    document.getElementById('checkoutBtn').disabled = ids.length === 0;
+
+    const shipEl = document.getElementById('shipProgress');
+    if(ids.length === 0){
+      shipEl.innerHTML = '';
+    } else if(freeshipForced || subtotal >= FREE_SHIP_THRESHOLD){
+      shipEl.innerHTML = `
+        <div class="msg"><strong>✓ Free shipping${freeshipForced ? ' from your code' : ''}!</strong></div>
+        <div class="ship-bar"><div class="ship-bar-fill" style="width:100%;"></div></div>
+      `;
+    } else {
+      const remaining = (FREE_SHIP_THRESHOLD - subtotal).toFixed(2);
+      const pct = Math.min(100, (subtotal/FREE_SHIP_THRESHOLD)*100);
+      shipEl.innerHTML = `
+        <div class="msg">Add <strong style="color:var(--accent);">$${remaining}</strong> more for free shipping</div>
+        <div class="ship-bar"><div class="ship-bar-fill" style="width:${pct}%;"></div></div>
+      `;
+    }
+  }
+
+  document.getElementById('checkoutBtn').addEventListener('click', ()=>{
+    if(Object.keys(cart).length === 0) return;
+    const orderNum = 'FS-' + Math.floor(100000 + Math.random()*899999);
+    const {total} = computeTotals();
+    closeDrawer();
+    showSuccessModal(orderNum, total);
+    cart = {};
+    saveState('fieldstone_cart', cart);
+    appliedDiscount = null;
+    saveState('fieldstone_discount', null);
+    updateCartUI();
+  });
+
+  function showSuccessModal(orderNum, total){
+    const modal = document.getElementById('successModal');
+    modal.innerHTML = `
+      <button class="modal-close" id="successClose" aria-label="Close">×</button>
+      <div class="modal-body">
+        <div class="success-icon">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h2>Order confirmed</h2>
+        <div class="order-num">Order ${orderNum} · $${total.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+        <p>Thanks for shopping small. A confirmation with tracking details would normally land in your inbox shortly — this is a demo store, so nothing was actually charged or shipped.</p>
+        <button class="modal-add-btn" id="successContinue">Continue shopping</button>
+      </div>
+    `;
+    openOverlayFor(modal);
+    document.getElementById('successClose').addEventListener('click', closeAllModals);
+    document.getElementById('successContinue').addEventListener('click', closeAllModals);
+  }
+
+  // ---------- quick view modal ----------
+  let currentModalId = null;
+  let modalQty = 1;
+  let currentGalleryViews = [];
+  let modalGalleryIndex = 0;
+
+  function galleryViews(color){
+    return [
+      `linear-gradient(135deg, ${color}, ${shade(color,-18)})`,
+      `linear-gradient(135deg, ${shade(color,22)}, ${color})`,
+      `linear-gradient(135deg, ${shade(color,-38)}, ${shade(color,-12)})`,
+      `linear-gradient(150deg, ${color}, ${shade(color,38)})`,
+    ];
+  }
+
+  function openQuickView(id){
+    currentModalId = id;
+    modalQty = 1;
+    modalGalleryIndex = 0;
+    pushRecent(id);
+    renderQuickView();
+    openOverlayFor(document.getElementById('quickViewModal'));
+  }
+  function refreshOpenModal(id){
+    if(currentModalId === id) renderQuickView();
+  }
+  function renderQuickView(){
+    const p = PRODUCTS.find(pr=>pr.id===currentModalId);
+    if(!p) return;
+    const modal = document.getElementById('quickViewModal');
+    const sl = stockLabel(p);
+    modalQty = Math.min(modalQty, Math.max(p.stock,1));
+    const hasImage = !!p.image;
+    currentGalleryViews = hasImage ? [] : galleryViews(p.color);
+    const mediaBg = hasImage ? `background-image:url('${p.image}');` : `background:${currentGalleryViews[modalGalleryIndex]};`;
+    const highValueVehicle = isHighValueVehicle(p);
+    const stockLimit = highValueVehicle ? VEHICLE_HIGH_VALUE_MAX : (SIZE_LIMITS[p.size] || 125);
+    const stockHintText = highValueVehicle
+      ? `Vehicles over $${VEHICLE_HIGH_VALUE_THRESHOLD.toLocaleString()} are limited to ${VEHICLE_HIGH_VALUE_MIN}–${VEHICLE_HIGH_VALUE_MAX} in stock.`
+      : `Max ${stockLimit} in stock for ${p.size ? p.size.toLowerCase() : 'this'} items.`;
+    const locked = p.price > SUBSCRIPTION_PRICE_THRESHOLD && !subscribed;
+    modal.innerHTML = `
+      <button class="modal-close" id="qvClose" aria-label="Close">×</button>
+      <div class="modal-grid">
+        <div class="modal-media-wrap">
+          <div class="modal-media" id="qvMainImage" style="${mediaBg}"></div>
+          ${!hasImage ? `
+            <div class="gallery-thumbs" id="qvThumbs">
+              ${currentGalleryViews.map((v,i)=>`<button type="button" class="thumb ${i===modalGalleryIndex?'active':''}" data-idx="${i}" style="background:${v};" aria-label="View ${i+1}"></button>`).join('')}
+            </div>
+          ` : ''}
+        </div>
+        <div class="modal-body">
+          <div class="maker">${p.maker}</div>
+          <h2>${p.name}</h2>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="modal-price">$${p.price.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+            <span class="modal-rating">★ ${p.rating} · ${p.reviews} reviews</span>
+          </div>
+          <div class="modal-desc">${p.desc}</div>
+          <div class="modal-stock ${sl.cls}">${sl.cls==='ok' ? `✓ ${sl.text} — ships in 2–4 days` : sl.text}</div>
+          ${locked ? `<div class="lock-note">🔒 Fieldstone+ membership required to purchase this item ($${SUBSCRIPTION_PRICE_THRESHOLD}+).</div>` : ''}
+          ${p.isUserListing ? `
+            <div class="mine-note">
+              <div class="mine-note-top">
+                <span>This is your listing${p.size ? ` · ${p.size} item` : ''}</span>
+                <div class="mine-note-actions">
+                  <button class="move-btn" id="qvMoveCat">Move category</button>
+                  <button class="remove-btn" id="qvRemove">Remove</button>
+                </div>
+              </div>
+              <div class="mine-move-row" id="qvMoveRow">
+                <select id="qvMoveSelect">${CATEGORY_LIST.map(c=>`<option value="${c}" ${c===p.cat?'selected':''}>${c}</option>`).join('')}</select>
+                <button type="button" class="mine-mini-btn update" id="qvMoveConfirm">Move</button>
+              </div>
+              <div class="mine-manage-row">
+                <input type="number" id="qvStockInput" min="0" max="${stockLimit}" value="${p.stock}">
+                <button type="button" class="mine-mini-btn update" id="qvUpdateStock">Update stock</button>
+                <button type="button" class="mine-mini-btn ${p.stock<=0?'restock':'outstock'}" id="qvToggleStock">${p.stock<=0?'Restock':'Mark out of stock'}</button>
+              </div>
+              <div class="mine-manage-hint">${stockHintText}</div>
+            </div>
+          ` : ''}
+          <div class="modal-qty-row">
+            <div class="qty-row">
+              <button id="qvMinus" aria-label="Decrease quantity" ${p.stock<=0?'disabled':''}>−</button>
+              <span id="qvQty">${p.stock>0?modalQty:0}</span>
+              <button id="qvPlus" aria-label="Increase quantity" ${p.stock<=0 || modalQty>=p.stock?'disabled':''}>+</button>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="modal-add-btn" id="qvAdd" ${p.stock<=0?'disabled':''}>${p.stock<=0?'Out of stock':(locked?'🔒 Unlock with Fieldstone+':'Add to cart')}</button>
+            <button class="modal-fav-btn ${favorites.has(p.id)?'active':''}" id="qvFav" aria-label="Save to favorites">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="${favorites.has(p.id)?'currentColor':'none'}"><path d="M12 20s-7-4.4-9.5-8.8C.7 7.4 2.7 4 6.2 4c2 0 3.5 1 4.8 2.6C12.3 5 13.8 4 15.8 4c3.5 0 5.5 3.4 3.7 7.2C19 15.6 12 20 12 20z" stroke="currentColor" stroke-width="1.8"/></svg>
+            </button>
+          </div>
+          <div class="modal-meta">
+            <span>🚚 Free shipping over $${FREE_SHIP_THRESHOLD}</span>
+            <span>↩ 30-day returns</span>
+          </div>
+        </div>
+      </div>
+    `;
+    document.getElementById('qvClose').addEventListener('click', closeAllModals);
+    document.getElementById('qvFav').addEventListener('click', ()=> toggleFavorite(p.id));
+    if(p.isUserListing){
+      document.getElementById('qvRemove').addEventListener('click', ()=> removeListing(p.id));
+      document.getElementById('qvMoveCat').addEventListener('click', ()=>{
+        const row = document.getElementById('qvMoveRow');
+        row.style.display = row.style.display === 'flex' ? 'none' : 'flex';
+      });
+      document.getElementById('qvMoveConfirm').addEventListener('click', ()=>{
+        const newCat = document.getElementById('qvMoveSelect').value;
+        moveListingCategory(p.id, newCat);
+      });
+      document.getElementById('qvUpdateStock').addEventListener('click', ()=>{
+        const val = parseInt(document.getElementById('qvStockInput').value);
+        updateListingStock(p.id, val);
+      });
+      document.getElementById('qvToggleStock').addEventListener('click', ()=>{
+        if(p.stock <= 0){
+          const restoreQty = clampStock(p, p.lastStock && p.lastStock>0 ? p.lastStock : (highValueVehicle ? VEHICLE_HIGH_VALUE_MIN : Math.min(5, stockLimit)));
+          updateListingStock(p.id, restoreQty);
+        } else {
+          markListingOutOfStock(p.id);
+        }
+      });
+    }
+    if(!hasImage){
+      document.querySelectorAll('#qvThumbs .thumb').forEach(t=>{
+        t.addEventListener('click', ()=> selectGalleryView(parseInt(t.dataset.idx)));
+      });
+    }
+    const minus = document.getElementById('qvMinus');
+    const plus = document.getElementById('qvPlus');
+    const qtySpan = document.getElementById('qvQty');
+    minus.addEventListener('click', ()=>{
+      if(modalQty > 1){ modalQty--; qtySpan.textContent = modalQty; renderQuickViewButtons(p); }
+    });
+    plus.addEventListener('click', ()=>{
+      if(modalQty < p.stock){ modalQty++; qtySpan.textContent = modalQty; renderQuickViewButtons(p); }
+    });
+    document.getElementById('qvAdd').addEventListener('click', ()=>{
+      if(p.stock <= 0) return;
+      const added = addToCart(p.id, modalQty);
+      if(added) closeAllModals();
+    });
+  }
+  function selectGalleryView(idx){
+    modalGalleryIndex = idx;
+    const mainImg = document.getElementById('qvMainImage');
+    if(!mainImg) return;
+    mainImg.style.opacity = 0;
+    setTimeout(()=>{
+      mainImg.style.background = currentGalleryViews[idx];
+      mainImg.style.opacity = 1;
+    }, 150);
+    document.querySelectorAll('#qvThumbs .thumb').forEach((t,i)=> t.classList.toggle('active', i===idx));
+  }
+  function renderQuickViewButtons(p){
+    document.getElementById('qvPlus').disabled = modalQty >= p.stock;
+  }
+
+  // ---------- seller inventory management ----------
+  function clampStock(product, val){
+    if(isNaN(val) || val < 0) val = 0;
+    if(val === 0) return 0;
+    if(isHighValueVehicle(product)){
+      return Math.min(Math.max(val, VEHICLE_HIGH_VALUE_MIN), VEHICLE_HIGH_VALUE_MAX);
+    }
+    const limit = SIZE_LIMITS[product.size] || 125;
+    return Math.min(val, limit);
+  }
+  function syncListingToStorage(product){
+    const uIdx = userListings.findIndex(p=>p.id===product.id);
+    if(uIdx !== -1){ userListings[uIdx] = product; saveState('fieldstone_listings', userListings); }
+  }
+  function updateListingStock(id, val){
+    const idx = PRODUCTS.findIndex(p=>p.id===id);
+    if(idx === -1) return;
+    const clamped = clampStock(PRODUCTS[idx], val);
+    PRODUCTS[idx].stock = clamped;
+    if(clamped > 0) PRODUCTS[idx].lastStock = clamped;
+    syncListingToStorage(PRODUCTS[idx]);
+    refreshOpenModal(id);
+    renderCategories();
+    renderGrid();
+    showToast(clamped > 0 ? `Stock updated to ${clamped}` : "Marked out of stock");
+  }
+  function markListingOutOfStock(id){
+    const idx = PRODUCTS.findIndex(p=>p.id===id);
+    if(idx === -1) return;
+    if(PRODUCTS[idx].stock > 0) PRODUCTS[idx].lastStock = PRODUCTS[idx].stock;
+    PRODUCTS[idx].stock = 0;
+    syncListingToStorage(PRODUCTS[idx]);
+    refreshOpenModal(id);
+    renderCategories();
+    renderGrid();
+    showToast("Marked out of stock");
+  }
+  function moveListingCategory(id, newCat){
+    const idx = PRODUCTS.findIndex(pr=>pr.id===id);
+    if(idx === -1) return;
+    const product = PRODUCTS[idx];
+    if(product.cat === newCat){ showToast(`Already in ${newCat}`); return; }
+    const nowVehicle = VEHICLE_CATS.includes(newCat);
+    if(nowVehicle && (!product.image || product.price <= BRAND_MIN_PRICE)){
+      showToast(`Can't move to ${newCat} — vehicles need a photo and a price above $${BRAND_MIN_PRICE}.`);
+      return;
+    }
+    product.cat = newCat;
+    if(nowVehicle){
+      product.size = 'Large';
+      product.stock = clampStock(product, product.stock);
+    }
+    syncListingToStorage(product);
+    refreshOpenModal(id);
+    renderCategories();
+    renderGrid();
+    showToast(`Moved to ${newCat}`);
+  }
+
+  // ---------- seller flow ----------
+  let sellerStep = 'connect';
+  let sellerTags = new Set();
+  let pendingImageDataUrl = null;
+
+  function openSeller(){
+    sellerStep = sellerEmail ? 'form' : 'connect';
+    sellerTags = new Set();
+    pendingImageDataUrl = null;
+    renderSellerModal();
+    openOverlayFor(document.getElementById('sellerModal'));
+  }
+
+  function renderSellerModal(){
+    const modal = document.getElementById('sellerModal');
+    if(sellerStep === 'connect'){
+      modal.innerHTML = `
+        <button class="modal-close" id="sellerClose" aria-label="Close">×</button>
+        <div class="seller-body">
+          <h2>Connect your Google account</h2>
+          <p class="intro">Fieldstone verifies sellers through Gmail before they can list goods. This is a simulated sign-in for the demo — no real Google account is contacted.</p>
+          <div class="form-group">
+            <label>Gmail address</label>
+            <input type="email" id="gmailInput" placeholder="you@gmail.com">
+          </div>
+          <div class="discount-error" id="gmailError" style="display:none;"></div>
+          <button class="google-btn" id="gmailConnectBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.5 12.2c0-.8-.07-1.6-.2-2.3H12v4.4h5.9c-.26 1.4-1.03 2.5-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.7 3.3-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-1 7.28-2.7l-3.5-2.7c-.98.66-2.25 1.05-3.78 1.05-2.9 0-5.36-1.96-6.24-4.6H2.4v2.8C4.2 20.6 7.8 23 12 23z"/><path fill="#FBBC05" d="M5.76 14.05A6.9 6.9 0 0 1 5.4 12c0-.7.12-1.4.36-2.05V7.15H2.4A11 11 0 0 0 1 12c0 1.8.43 3.5 1.4 4.85z"/><path fill="#EA4335" d="M12 5.9c1.6 0 3 .55 4.1 1.6l3.1-3.1C17.45 2.6 14.96 1.6 12 1.6 7.8 1.6 4.2 4 2.4 7.15l3.36 2.8C6.64 7.86 9.1 5.9 12 5.9z"/></svg>
+            Continue with Google
+          </button>
+        </div>
+      `;
+      document.getElementById('sellerClose').addEventListener('click', closeAllModals);
+      document.getElementById('gmailConnectBtn').addEventListener('click', ()=>{
+        const val = document.getElementById('gmailInput').value.trim().toLowerCase();
+        const errEl = document.getElementById('gmailError');
+        if(!/^[^\s@]+@gmail\.com$/.test(val)){
+          errEl.textContent = "Enter a valid @gmail.com address to continue.";
+          errEl.style.display = 'block';
+          return;
+        }
+        sellerEmail = val;
+        saveState('fieldstone_seller_email', sellerEmail);
+        showToast("Google account connected");
+        sellerStep = 'form';
+        renderSellerModal();
+      });
+    } else {
+      modal.innerHTML = `
+        <button class="modal-close" id="sellerClose" aria-label="Close">×</button>
+        <div class="seller-body">
+          <div class="seller-connected-note">
+            <span>✓ Connected as ${sellerEmail}</span>
+            <button id="disconnectBtn">Disconnect</button>
+          </div>
+          <h2>List a new item</h2>
+          <div class="form-row">
+            <div class="form-group"><label>Item name</label><input type="text" id="fName" placeholder="Hand-thrown vase"></div>
+            <div class="form-group"><label>Price ($)</label><input type="number" id="fPrice" min="1" step="0.5" placeholder="42"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Category</label>
+              <select id="fCat">${CATEGORIES.filter(c=>c!=='All').map(c=>`<option value="${c}">${c}</option>`).join('')}</select>
+            </div>
+            <div class="form-group"><label>Item size</label>
+              <select id="fSize">
+                <option value="Small">Small — up to 300 in stock</option>
+                <option value="Medium" selected>Medium — up to 125 in stock</option>
+                <option value="Large">Large — up to 80 in stock</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Stock quantity</label>
+            <input type="number" id="fStock" min="1" value="5" max="125">
+            <div class="stock-hint" id="stockHint">Max 125 for medium items</div>
+          </div>
+          <div class="form-group"><label>Shop / maker name</label><input type="text" id="fMaker" placeholder="e.g. Willow &amp; Ash Studio"></div>
+          <div class="form-group"><label>Description</label><textarea id="fDesc" placeholder="What makes it worth buying — materials, process, care tips…"></textarea></div>
+          <div class="form-group">
+            <label class="check-row" style="padding:0;"><input type="checkbox" id="fBrand"> This is a brand-name or designer item</label>
+            <div class="brand-hint" id="brandHint" style="display:none;">Cars, motorcycles, and brand/designer items need a photo and must be priced above $${BRAND_MIN_PRICE}.</div>
+          </div>
+          <div class="form-group">
+            <label>Photo <span>(optional unless required above)</span></label>
+            <div class="image-upload-row">
+              <div class="image-preview" id="imagePreview"><span>No photo</span></div>
+              <label class="upload-btn" for="fImage">📷 Add image of the item</label>
+              <input type="file" id="fImage" accept="image/*" style="display:none;">
+            </div>
+            <div class="discount-error" id="imageError" style="display:none;"></div>
+          </div>
+          <div class="form-group">
+            <label>Swatch color <span>(used if no photo is added)</span></label>
+            <input type="color" id="fColor" value="#8A6D4B" style="height:42px; padding:4px;">
+          </div>
+          <div class="form-group">
+            <label>Tags <span>(optional — helps it show up in "Picked for you")</span></label>
+            <div class="tag-grid" id="fTagGrid">
+              ${TAG_OPTIONS.filter(t=>t.key!==UNDER30_KEY).map(t=>`<button type="button" class="tag-chip" data-tag="${t.key}">${t.emoji} ${t.key}</button>`).join('')}
+            </div>
+          </div>
+          <div class="discount-error" id="listingError" style="display:none;"></div>
+          <button class="modal-add-btn" id="submitListingBtn" style="margin-top:6px;">List item</button>
+        </div>
+      `;
+      document.getElementById('sellerClose').addEventListener('click', closeAllModals);
+      document.getElementById('disconnectBtn').addEventListener('click', ()=>{
+        sellerEmail = null;
+        saveState('fieldstone_seller_email', null);
+        sellerStep = 'connect';
+        renderSellerModal();
+      });
+      modal.querySelectorAll('#fTagGrid .tag-chip').forEach(chip=>{
+        chip.addEventListener('click', ()=>{
+          const tag = chip.dataset.tag;
+          if(sellerTags.has(tag)) sellerTags.delete(tag); else sellerTags.add(tag);
+          chip.classList.toggle('active');
+        });
+      });
+      document.getElementById('fCat').addEventListener('change', refreshFormHints);
+      document.getElementById('fSize').addEventListener('change', refreshFormHints);
+      document.getElementById('fPrice').addEventListener('input', refreshFormHints);
+      document.getElementById('fBrand').addEventListener('change', refreshFormHints);
+      refreshFormHints();
+      document.getElementById('fImage').addEventListener('change', handleImageUpload);
+      document.getElementById('submitListingBtn').addEventListener('click', submitListing);
+    }
+  }
+
+  function refreshFormHints(){
+    const cat = document.getElementById('fCat').value;
+    const isVehicle = VEHICLE_CATS.includes(cat);
+    const price = parseFloat(document.getElementById('fPrice').value) || 0;
+    const sizeSelect = document.getElementById('fSize');
+    sizeSelect.disabled = isVehicle;
+    if(isVehicle) sizeSelect.value = 'Large';
+    const size = sizeSelect.value;
+
+    const stockInput = document.getElementById('fStock');
+    const stockHint = document.getElementById('stockHint');
+    if(isVehicle && price > VEHICLE_HIGH_VALUE_THRESHOLD){
+      stockInput.max = VEHICLE_HIGH_VALUE_MAX;
+      stockHint.textContent = `Vehicles over $${VEHICLE_HIGH_VALUE_THRESHOLD.toLocaleString()} are limited to ${VEHICLE_HIGH_VALUE_MIN}–${VEHICLE_HIGH_VALUE_MAX} in stock.`;
+    } else {
+      const limit = SIZE_LIMITS[size];
+      stockInput.max = limit;
+      stockHint.textContent = `Max ${limit} for ${size.toLowerCase()} items`;
+    }
+
+    const brandCheckbox = document.getElementById('fBrand');
+    if(isVehicle){ brandCheckbox.checked = true; brandCheckbox.disabled = true; }
+    else{ brandCheckbox.disabled = false; }
+    const brandRequired = isVehicle || brandCheckbox.checked;
+    document.getElementById('brandHint').style.display = brandRequired ? 'block' : 'none';
+  }
+
+  function handleImageUpload(e){
+    const file = e.target.files[0];
+    const errEl = document.getElementById('imageError');
+    errEl.style.display = 'none';
+    if(!file) return;
+    if(!file.type.startsWith('image/')){
+      errEl.textContent = "Please choose an image file.";
+      errEl.style.display = 'block';
+      return;
+    }
+    if(file.size > 8 * 1024 * 1024){
+      errEl.textContent = "That image is too large — please choose one under 8MB.";
+      errEl.style.display = 'block';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const maxDim = 640;
+        let w = img.width, h = img.height;
+        if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+        else if(h >= w && h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        pendingImageDataUrl = dataUrl;
+        const preview = document.getElementById('imagePreview');
+        if(preview) preview.innerHTML = `<img src="${dataUrl}" alt="Preview">`;
       };
-      BUILDINGS.forEach(b => state.owned[b.id] = 0);
-      MINIONS.forEach(m => state.minions[m.id] = 0);
-      applyTheme('home');
-      try{ localStorage.removeItem('driftColonySave'); }catch(e){}
-      render();
-      toast('Save reset.');
-    },
-    { confirmText:'Reset' }
-  );
-});
+      img.onerror = ()=>{
+        errEl.textContent = "Couldn't read that image — please try another file.";
+        errEl.style.display = 'block';
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
 
-/* settings toggles */
-function setToggle(btn, on){
-  btn.textContent = on ? 'ON' : 'OFF';
-  btn.classList.toggle('on', on);
-}
-const toggleTipsBtn = document.getElementById('toggleTips');
-const toggleSoundBtn = document.getElementById('toggleSound');
-const toggleMotionBtn = document.getElementById('toggleMotion');
+  function submitListing(){
+    const name = document.getElementById('fName').value.trim();
+    const price = parseFloat(document.getElementById('fPrice').value);
+    const cat = document.getElementById('fCat').value;
+    let size = document.getElementById('fSize').value;
+    let stock = parseInt(document.getElementById('fStock').value);
+    const maker = document.getElementById('fMaker').value.trim() || sellerEmail.split('@')[0];
+    const desc = document.getElementById('fDesc').value.trim() || "A handmade piece from an independent Fieldstone maker.";
+    const color = document.getElementById('fColor').value;
+    const isBrandChecked = document.getElementById('fBrand').checked;
+    const errEl = document.getElementById('listingError');
+    const isVehicle = VEHICLE_CATS.includes(cat);
 
-toggleTipsBtn.addEventListener('click', ()=>{
-  state.settings.tipsOn = !state.settings.tipsOn;
-  setToggle(toggleTipsBtn, state.settings.tipsOn);
-});
-toggleSoundBtn.addEventListener('click', ()=>{
-  state.settings.soundOn = !state.settings.soundOn;
-  setToggle(toggleSoundBtn, state.settings.soundOn);
-});
-toggleMotionBtn.addEventListener('click', ()=>{
-  state.settings.reduceMotion = !state.settings.reduceMotion;
-  document.body.classList.toggle('reduce-motion', state.settings.reduceMotion);
-  setToggle(toggleMotionBtn, state.settings.reduceMotion);
-});
+    if(!name || !price || price<=0 || !stock || stock<=0){
+      errEl.textContent = "Fill in an item name, a price above $0, and at least 1 in stock.";
+      errEl.style.display = 'block';
+      return;
+    }
 
-load();
-applyTheme(state.currentLocation);
-setToggle(toggleTipsBtn, state.settings.tipsOn);
-setToggle(toggleSoundBtn, state.settings.soundOn);
-setToggle(toggleMotionBtn, state.settings.reduceMotion);
-document.body.classList.toggle('reduce-motion', state.settings.reduceMotion);
-render();
+    const brandRequired = isVehicle || isBrandChecked;
+    if(brandRequired){
+      if(!pendingImageDataUrl){
+        errEl.textContent = "Cars, motorcycles, and brand-name or designer items need a photo before they can be listed.";
+        errEl.style.display = 'block';
+        return;
+      }
+      if(price <= BRAND_MIN_PRICE){
+        errEl.textContent = `Cars, motorcycles, and brand-name or designer items must be priced above $${BRAND_MIN_PRICE}.`;
+        errEl.style.display = 'block';
+        return;
+      }
+    }
+
+    let vehicleAdjustNote = "";
+    if(isVehicle){
+      size = 'Large';
+      if(price > VEHICLE_HIGH_VALUE_THRESHOLD){
+        const clamped = Math.min(Math.max(stock, VEHICLE_HIGH_VALUE_MIN), VEHICLE_HIGH_VALUE_MAX);
+        if(clamped !== stock) vehicleAdjustNote = ` Stock set to ${clamped} — vehicles over $100k are limited to 3–6 in stock.`;
+        stock = clamped;
+      } else if(stock > SIZE_LIMITS.Large){
+        errEl.textContent = `Large items are capped at ${SIZE_LIMITS.Large} in stock.`;
+        errEl.style.display = 'block';
+        return;
+      }
+    } else {
+      const limit = SIZE_LIMITS[size];
+      if(stock > limit){
+        errEl.textContent = `${size} items are capped at ${limit} in stock. Lower the quantity or choose a different size.`;
+        errEl.style.display = 'block';
+        return;
+      }
+    }
+
+    const newProduct = {
+      id: PRODUCTS.length ? Math.max(...PRODUCTS.map(p=>p.id)) + 1 : 1,
+      name, maker, price, cat, size, desc, color,
+      image: pendingImageDataUrl || null,
+      rating: 5.0, reviews: 0, stock, lastStock: stock,
+      tags: Array.from(sellerTags),
+      isUserListing: true,
+      isBrand: brandRequired
+    };
+    PRODUCTS.push(newProduct);
+    userListings.push(newProduct);
+    saveState('fieldstone_listings', userListings);
+    pendingImageDataUrl = null;
+    closeAllModals();
+    renderCategories();
+    renderGrid();
+    showToast(`🎉 ${name} is live on Fieldstone.${vehicleAdjustNote}`);
+  }
+
+  function removeListing(id){
+    PRODUCTS = PRODUCTS.filter(p=>p.id!==id);
+    userListings = userListings.filter(p=>p.id!==id);
+    saveState('fieldstone_listings', userListings);
+    closeAllModals();
+    renderCategories();
+    renderGrid();
+    showToast("Listing removed");
+  }
+
+  document.getElementById('sellBtn').addEventListener('click', openSeller);
+
+  // ---------- mascot ----------
+  let mascotTipIndex = 0;
+  let mascotTimer = null;
+  function showMascotTip(advance){
+    const bubble = document.getElementById('mascotBubble');
+    if(advance){ mascotTipIndex = (mascotTipIndex + 1) % MASCOT_TIPS.length; }
+    bubble.innerHTML = `<button class="mascot-bubble-close" id="mascotBubbleClose" aria-label="Dismiss">×</button>${MASCOT_TIPS[mascotTipIndex]}`;
+    bubble.classList.add('show');
+    document.getElementById('mascotBubbleClose').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      bubble.classList.remove('show');
+      clearTimeout(mascotTimer);
+    });
+    clearTimeout(mascotTimer);
+    mascotTimer = setTimeout(()=> bubble.classList.remove('show'), 5000);
+  }
+  document.getElementById('mascotBtn').addEventListener('click', ()=> showMascotTip(true));
+  function initMascotGreeting(){
+    setTimeout(()=> showMascotTip(false), 900);
+  }
+
+  // ---------- onboarding ----------
+  function transitionOnboardTo(renderFn){
+    const panel = document.getElementById('onboardPanel');
+    panel.style.transition = 'transform .28s cubic-bezier(.4,0,.2,1), opacity .28s ease';
+    panel.style.transform = 'translateX(-36px)';
+    panel.style.opacity = '0';
+    setTimeout(()=>{
+      renderFn();
+      const p = document.getElementById('onboardPanel');
+      p.style.transition = 'none';
+      p.style.transform = 'translateX(36px)';
+      p.style.opacity = '0';
+      void p.offsetHeight;
+      p.style.transition = 'transform .28s cubic-bezier(.4,0,.2,1), opacity .28s ease';
+      p.style.transform = 'translateX(0)';
+      p.style.opacity = '1';
+    }, 280);
+  }
+
+  function renderOnboardGreeting(){
+    document.getElementById('onboardPanel').innerHTML = `
+      <div class="onboard-emoji">🪨</div>
+      <h1>Welcome to Fieldstone</h1>
+      <p>A marketplace for independent makers — now with vehicles, watches, and jewelry from verified sellers too.</p>
+      <div class="onboard-actions">
+        <button class="onboard-btn primary" id="obExplainBtn">See how it works</button>
+        <button class="onboard-btn ghost" id="obSkipBtn">Skip</button>
+      </div>
+    `;
+    document.getElementById('obExplainBtn').addEventListener('click', ()=> transitionOnboardTo(renderOnboardExplain));
+    document.getElementById('obSkipBtn').addEventListener('click', ()=> transitionOnboardTo(renderOnboardTerms));
+  }
+
+  function renderOnboardExplain(){
+    document.getElementById('onboardPanel').innerHTML = `
+      <h1>How Fieldstone works</h1>
+      <div class="onboard-steps">
+        <div class="onboard-step" style="animation-delay:.05s;"><span>🔍</span><div><strong>Browse & discover</strong><p>Filter by category, rating, and price — or take the quiz for picks made for you.</p></div></div>
+        <div class="onboard-step" style="animation-delay:.15s;"><span>🛍️</span><div><strong>List your goods</strong><p>Connect your Gmail and list anything from handmade crafts to vehicles.</p></div></div>
+        <div class="onboard-step" style="animation-delay:.25s;"><span>🔒</span><div><strong>Fieldstone+</strong><p>Items $${SUBSCRIPTION_PRICE_THRESHOLD} and up need a quick membership, which unlocks 10% off everything.</p></div></div>
+        <div class="onboard-step" style="animation-delay:.35s;"><span>📦</span><div><strong>Checkout</strong><p>This is a demo store — checkout is simulated and nothing is really charged.</p></div></div>
+      </div>
+      <div class="onboard-actions">
+        <button class="onboard-btn primary" id="obContinueBtn">Continue</button>
+      </div>
+    `;
+    document.getElementById('obContinueBtn').addEventListener('click', ()=> transitionOnboardTo(renderOnboardTerms));
+  }
+
+  function renderOnboardTerms(){
+    document.getElementById('onboardPanel').innerHTML = `
+      <h1>Terms of Policy</h1>
+      <div class="terms-box">
+        <p><strong>1. Demo marketplace.</strong> Fieldstone is a demonstration storefront. No real payments, shipments, or accounts are processed.</p>
+        <p><strong>2. Buyer responsibility.</strong> All listings are created by third-party sellers. Fieldstone does not verify, inspect, or guarantee any item, seller, or transaction. If you are scammed, defrauded, or otherwise harmed through a listing or interaction on this site, that is solely between you and the other party — Fieldstone bears no responsibility or liability.</p>
+        <p><strong>3. Fieldstone+ membership.</strong> Membership fees, discounts, and perks described on this site are simulated for demonstration purposes only.</p>
+        <p><strong>4. No warranties.</strong> Fieldstone is provided "as is," without warranties of any kind, express or implied.</p>
+        <p><strong>5. Acceptance.</strong> By continuing, you acknowledge you've read and agree to these terms.</p>
+      </div>
+      <label class="check-row" style="padding:0; margin:14px 0;">
+        <input type="checkbox" id="obAgreeCheck"> I have read and agree to the Terms of Policy
+      </label>
+      <div class="onboard-actions">
+        <button class="onboard-btn primary" id="obAgreeBtn" disabled>Agree & Continue</button>
+      </div>
+    `;
+    const checkbox = document.getElementById('obAgreeCheck');
+    const agreeBtn = document.getElementById('obAgreeBtn');
+    checkbox.addEventListener('change', ()=>{ agreeBtn.disabled = !checkbox.checked; });
+    agreeBtn.addEventListener('click', ()=>{
+      saveState('fieldstone_onboarded', true);
+      closeOnboarding();
+    });
+  }
+
+  function closeOnboarding(){
+    const ov = document.getElementById('onboardOverlay');
+    ov.style.opacity = '0';
+    setTimeout(()=>{
+      ov.style.display = 'none';
+      document.body.style.overflow = '';
+      initMascotGreeting();
+    }, 300);
+  }
+
+  // ---------- sidebar (mobile slide-in) ----------
+  const sidebarEl = document.getElementById('sidebar');
+  function openSidebar(){
+    sidebarEl.classList.add('open');
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSidebar(){
+    sidebarEl.classList.remove('open');
+    if(!drawer.classList.contains('open') && !document.querySelector('.modal.open')){
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  }
+  document.getElementById('filterToggle').addEventListener('click', openSidebar);
+  document.getElementById('closeSidebar').addEventListener('click', closeSidebar);
+
+  // ---------- modal / overlay plumbing ----------
+  function openOverlayFor(modalEl){
+    closeSidebar();
+    overlay.classList.add('open');
+    document.querySelectorAll('.modal').forEach(m=> m!==modalEl && m.classList.remove('open'));
+    modalEl.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeAllModals(){
+    document.querySelectorAll('.modal').forEach(m=> m.classList.remove('open'));
+    if(!drawer.classList.contains('open') && !sidebarEl.classList.contains('open')){
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    currentModalId = null;
+    pendingCartAction = null;
+  }
+
+  function showToast(msg){
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(()=> toast.classList.remove('show'), 1800);
+  }
+
+  // ---------- drawer ----------
+  const overlay = document.getElementById('overlay');
+  const drawer = document.getElementById('drawer');
+  function openDrawer(){
+    closeAllModals();
+    closeSidebar();
+    overlay.classList.add('open');
+    drawer.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDrawer(){
+    drawer.classList.remove('open');
+    if(!sidebarEl.classList.contains('open') && !document.querySelector('.modal.open')){
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  }
+  document.getElementById('openCart').addEventListener('click', openDrawer);
+  document.getElementById('closeCart').addEventListener('click', closeDrawer);
+  overlay.addEventListener('click', ()=>{
+    closeDrawer();
+    closeAllModals();
+    closeSidebar();
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape'){
+      closeDrawer();
+      closeAllModals();
+      closeSidebar();
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
+
+  // ---------- search ----------
+  const searchInput = document.getElementById('searchInput');
+  const searchClear = document.getElementById('searchClear');
+  searchInput.addEventListener('input', (e)=>{
+    query = e.target.value;
+    searchClear.classList.toggle('show', query.length > 0);
+    renderGrid();
+  });
+  searchClear.addEventListener('click', ()=>{
+    query = "";
+    searchInput.value = "";
+    searchClear.classList.remove('show');
+    searchInput.focus();
+    renderGrid();
+  });
+
+  const priceRange = document.getElementById('priceRange');
+  const priceLabel = document.getElementById('priceLabel');
+  priceRange.addEventListener('input', (e)=>{
+    maxPrice = parseInt(e.target.value);
+    priceLabel.textContent = maxPrice >= 100 ? '$100+' : `$${maxPrice}`;
+    renderGrid();
+  });
+
+  document.getElementById('inStockOnly').addEventListener('change', (e)=>{
+    inStockOnly = e.target.checked;
+    renderGrid();
+  });
+
+  document.getElementById('sortSelect').addEventListener('change', (e)=>{
+    sortBy = e.target.value;
+    renderGrid();
+  });
+
+  document.getElementById('clearFilters').addEventListener('click', ()=>{
+    activeCat = "All"; query = ""; maxPrice = 100; inStockOnly = false; sortBy = "featured"; showFavsOnly = false; minRating = 0;
+    searchInput.value = "";
+    searchClear.classList.remove('show');
+    priceRange.value = 100; priceLabel.textContent = "$100+";
+    document.getElementById('inStockOnly').checked = false;
+    document.getElementById('sortSelect').value = "featured";
+    updateFavUI();
+    renderCategories();
+    renderRatingFilter();
+    updateRatingLabel();
+    renderGrid();
+    updateBreadcrumb();
+  });
+
+  document.getElementById('crumbHome').addEventListener('click', ()=>{
+    activeCat = "All"; showFavsOnly = false;
+    updateFavUI();
+    renderCategories();
+    renderGrid();
+    updateBreadcrumb();
+  });
+
+  document.getElementById('logoBtn').addEventListener('click', ()=>{
+    activeCat = "All"; query = ""; showFavsOnly = false;
+    searchInput.value = ""; searchClear.classList.remove('show');
+    updateFavUI();
+    renderCategories();
+    renderGrid();
+    updateBreadcrumb();
+  });
+
+  renderCategories();
+  renderRatingFilter();
+  updateRatingLabel();
+  renderPrefBlock();
+  renderSubBlock();
+  renderGrid();
+  updateCartUI();
+  updateFavUI();
+
+  if(!loadState('fieldstone_onboarded', false)){
+    document.body.style.overflow = 'hidden';
+    document.getElementById('onboardOverlay').style.display = 'flex';
+    renderOnboardGreeting();
+  } else {
+    initMascotGreeting();
+  }
 </script>
 
 </body>
